@@ -3,11 +3,22 @@
 //! key, the textual templates of `WriterOptions.refs`.
 
 use tmark_ir::NodeId;
-use tmark_registry::{RefResolution, Resolved};
+use tmark_registry::{RefResolution, Resolution, Resolved};
 
 /// The resolution recorded for `key` on `node`, if any.
 pub fn lookup<'a>(res: &'a Resolved, node: NodeId, key: &str) -> Option<&'a RefResolution> {
     res.refs.iter().find(|r| r.node == node && r.key == key)
+}
+
+/// Whether the reference-style link `[text][key]` on `node` refers (spec
+/// §Ref): it does when `key` is a label of this document or of the book,
+/// and not otherwise — a document written without a resolution included,
+/// where the node keeps the literal brackets CommonMark gives it.
+pub fn refers(res: &Resolved, node: NodeId, key: &str) -> bool {
+    matches!(
+        lookup(res, node, key).map(|r| &r.resolution),
+        Some(Resolution::Label { .. } | Resolution::Sibling { .. })
+    )
 }
 
 /// What an unresolved key renders as, in every backend (spec §Ref).

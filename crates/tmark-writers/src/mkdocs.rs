@@ -1225,7 +1225,11 @@ impl<'a> Lowerer<'a> {
     }
 
     /// `[x]{#id .c lang=fr}`: `<span>` with its attributes; `media=web`
-    /// unwraps.
+    /// unwraps. An anchor on its own keeps its Markdown spelling, the
+    /// empty link `[](){#id}`: Python-Markdown stashes raw HTML out of
+    /// the element tree, and `mkdocs-autorefs` registers the anchors it
+    /// finds *in* that tree, so a `<span id>` would be an id no page of
+    /// the site could point at.
     fn span(&mut self, f: &File, s: &SpanNode) -> String {
         if let Some(kind) = tmark_ir::critic(s) {
             return self.critic(f, kind);
@@ -1233,6 +1237,9 @@ impl<'a> Lowerer<'a> {
         let content = self.inlines_text(f, &s.content);
         if s.attrs.media() == Some("web") {
             return content;
+        }
+        if s.content.is_empty() && s.attrs.id.is_some() {
+            return print_node_with(NodeRef::Inline(&Inline::Span(s.clone())), Profile::Mkdocs);
         }
         let mut out = String::from("<span");
         if let Some(id) = s.attrs.id() {

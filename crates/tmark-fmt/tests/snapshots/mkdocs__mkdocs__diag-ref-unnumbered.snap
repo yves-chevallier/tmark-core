@@ -2,7 +2,7 @@
 source: crates/tmark-fmt/tests/mkdocs.rs
 expression: mkdocs(&canonical)
 ---
-This [claim]{#claim} and []{#top} are anchors.
+This [claim]{#claim} and [](){#top} are anchors.
 
 <div id="d1" markdown>
 A block.

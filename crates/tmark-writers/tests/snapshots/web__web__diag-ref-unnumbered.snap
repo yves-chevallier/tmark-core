@@ -2,7 +2,7 @@
 source: crates/tmark-writers/tests/web.rs
 expression: snapshot
 ---
-This <span id="claim">claim</span> and <span id="top"></span> are anchors.
+This <span id="claim">claim</span> and [](){#top} are anchors.
 
 ::: div {#d1}
 A block.

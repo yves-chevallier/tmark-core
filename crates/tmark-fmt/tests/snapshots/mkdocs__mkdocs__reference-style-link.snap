@@ -2,4 +2,6 @@
 source: crates/tmark-fmt/tests/mkdocs.rs
 expression: mkdocs(&canonical)
 ---
-[](){#myanchor}
+[](){#claim}
+
+See [the claim][claim], not [that][no-such-label].

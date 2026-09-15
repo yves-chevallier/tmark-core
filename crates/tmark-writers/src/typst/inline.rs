@@ -202,24 +202,40 @@ impl Typst<'_> {
                     self.out.push("]");
                 }
             }
-            Target::Anchor(id) => {
-                let label = escape::label(id);
-                if n.content.is_empty() {
-                    self.out.push(&format!("#ref(<{label}>, supplement: none)"));
+            Target::Anchor(id) => self.anchor(n, id),
+            // Spec §Ref: the reference-style form is a textual reference
+            // to the label it names, and the brackets CommonMark reads
+            // when it names none.
+            Target::Reference(key) => {
+                if refs::refers(self.res, n.meta.id, key) {
+                    self.anchor(n, key);
                 } else {
-                    let text = self.render_inlines(&n.content);
-                    let rendered = refs::textual(
-                        &self.opts.refs.textual_print,
-                        &format!("#link(<{label}>)[{text}]"),
-                        &format!("#ref(<{label}>, supplement: none)"),
-                        &format!("#ts-page(<{label}>)"),
-                    );
-                    self.out.push(&rendered);
+                    self.out.push("\\[");
+                    self.inlines(&n.content);
+                    self.out.push(&format!("\\]\\[{}\\]", escape::markup(key)));
                 }
             }
             Target::Document(_) => self.inlines(&n.content),
         }
         self.out.end(n.meta.id);
+    }
+
+    /// A link to an anchor of the document: `#ref` when it carries no
+    /// text of its own, else `#link` through the textual template.
+    fn anchor(&mut self, n: &Link, key: &str) {
+        let label = escape::label(key);
+        if n.content.is_empty() {
+            self.out.push(&format!("#ref(<{label}>, supplement: none)"));
+            return;
+        }
+        let text = self.render_inlines(&n.content);
+        let rendered = refs::textual(
+            &self.opts.refs.textual_print,
+            &format!("#link(<{label}>)[{text}]"),
+            &format!("#ref(<{label}>, supplement: none)"),
+            &format!("#ts-page(<{label}>)"),
+        );
+        self.out.push(&rendered);
     }
 
     /// `Ref`: `#link(<key>)[Label]` for TMark-numbered series,

@@ -3135,6 +3135,25 @@
           }
         },
         {
+          "description": "`[text][id]`, a reference-style link no definition matches: a textual reference when `id` is a label of the document or of the book, and the literal text CommonMark makes of it otherwise. Spec §Ref.",
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Reference"
+              ]
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        {
           "description": "Another document, `[](other.md)`.",
           "type": "object",
           "required": [

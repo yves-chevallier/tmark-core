@@ -177,6 +177,11 @@ pub enum Target {
     Url(String),
     /// `#id` in this document.
     Anchor(String),
+    /// `[text][id]`, a reference-style link no definition matches: a
+    /// textual reference when `id` is a label of the document or of the
+    /// book, and the literal text CommonMark makes of it otherwise.
+    /// Spec §Ref.
+    Reference(String),
     /// Another document, `[](other.md)`.
     Document(String),
 }

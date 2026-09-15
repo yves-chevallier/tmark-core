@@ -1,6 +1,6 @@
 """The tmark IR as Python dataclasses, generated from the IR schema. Do not edit.
 tmark version: 0.1.0
-schema sha256: 8346ce36c0d5e8379d30649f654778193f083a99d6b6429347f9015335e7b0b2
+schema sha256: 86dc1151cdb0be1169db5939b515418919eee169c4b2ff1cd1e3d32bfed2b13b
 
 Regenerate with ``crates/tmark-py/scripts/gen_ir_models.py`` (``--check`` in CI).
 Every node is a
@@ -15,7 +15,7 @@ from enum import Enum
 from typing import Any, ClassVar, Final, Literal, NamedTuple, TypeAlias
 
 TMARK_VERSION: Final = '0.1.0'
-SCHEMA_HASH: Final = '8346ce36c0d5e8379d30649f654778193f083a99d6b6429347f9015335e7b0b2'
+SCHEMA_HASH: Final = '86dc1151cdb0be1169db5939b515418919eee169c4b2ff1cd1e3d32bfed2b13b'
 
 #: A JSON value the schema leaves untyped (front-matter blobs).
 JsonValue: TypeAlias = Any
@@ -565,6 +565,14 @@ class RefItem(Record):
 
 
 @dataclass(frozen=True, slots=True)
+class Reference(Target):
+    """`[text][id]`, a reference-style link no definition matches: a textual reference when `id` is a label of the document or of the book, and the literal text CommonMark makes of it otherwise. Spec §Ref."""
+
+    type: ClassVar[Literal["Reference"]] = "Reference"
+    value: str
+
+
+@dataclass(frozen=True, slots=True)
 class Separator(Row):
     """A horizontal rule between rows, optionally labelled. Mirrors Python `Separator` (written `separator: true` with `label`/`double-rule` next to it, or `separator: {label, double-rule}`)."""
 
@@ -875,7 +883,7 @@ AnyBlock: TypeAlias = Para | Plain | Header | CodeBlock | BlockQuote | BulletLis
 AnyColumn: TypeAlias = LeafColumn | ColumnGroup
 AnyInline: TypeAlias = Str | Space | SoftBreak | LineBreak | Emph | Strong | Strikeout | Underline | Highlight | Subscript | Superscript | SmallCaps | Quoted | Code | Math | Link | Ref | Note | Image | IndexEntry | CounterItem | Keystroke | Aside | SpanNode | Var | Abbr | Comment | RawInline | ProgressBar
 AnyRow: TypeAlias = DataRow | Separator
-AnyTarget: TypeAlias = Url | Anchor | DocumentTarget
+AnyTarget: TypeAlias = Url | Anchor | Reference | DocumentTarget
 
 
 class FieldSpec(NamedTuple):
@@ -955,6 +963,7 @@ UNIONS: Final[dict[type, dict[str, type]]] = {
     Target: {
         "Url": Url,
         "Anchor": Anchor,
+        "Reference": Reference,
         "Document": DocumentTarget,
     },
 }
@@ -1311,6 +1320,9 @@ FIELDS: Final[dict[type, tuple[FieldSpec, ...]]] = {
         FieldSpec("suffix", ("opt", ("str",)), "skip", None),
         FieldSpec("suppress_author", ("bool",), "skip", False),
     ),
+    Reference: (
+        FieldSpec("value", ("str",), "required", None),
+    ),
     Separator: (
         FieldSpec("double_rule", ("bool",), "skip", False),
         FieldSpec("label", ("opt", ("str",)), "skip", None),
@@ -1487,6 +1499,7 @@ __all__ = [
     "Record",
     "Ref",
     "RefItem",
+    "Reference",
     "Row",
     "SCHEMA_HASH",
     "Scope",

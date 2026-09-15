@@ -60,8 +60,10 @@ pub struct RefResolution {
 
 pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
     // (node, key span, node span, key, numeric: `@key` or `[](#key)`,
-    // which shows a number, as opposed to `[text](#key)`)
-    let mut found: Vec<(NodeId, Span, Span, String, bool)> = Vec::new();
+    // which shows a number, as opposed to `[text](#key)`; labels_only:
+    // the reference-style `[text][id]`, which is a reference only when it
+    // names a label and stays literal text otherwise)
+    let mut found: Vec<(NodeId, Span, Span, String, bool, bool)> = Vec::new();
     walk(doc, &mut |node: NodeRef| {
         if let NodeRef::Inline(inline) = node {
             match inline {
@@ -72,27 +74,36 @@ pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
                         } else {
                             item.key_span.0
                         };
-                        found.push((r.meta.id, span, r.meta.span, item.key.clone(), true));
+                        found.push((r.meta.id, span, r.meta.span, item.key.clone(), true, false));
                     }
                 }
-                Inline::Link(l) => {
-                    if let Target::Anchor(id) = &l.target {
-                        found.push((
-                            l.meta.id,
-                            l.meta.span,
-                            l.meta.span,
-                            id.clone(),
-                            l.content.is_empty(),
-                        ));
+                Inline::Link(l) => match &l.target {
+                    Target::Anchor(id) => found.push((
+                        l.meta.id,
+                        l.meta.span,
+                        l.meta.span,
+                        id.clone(),
+                        l.content.is_empty(),
+                        false,
+                    )),
+                    Target::Reference(id) => {
+                        found.push((l.meta.id, l.meta.span, l.meta.span, id.clone(), false, true))
                     }
-                }
+                    Target::Url(_) | Target::Document(_) => {}
+                },
                 _ => {}
             }
         }
     });
-    for (node, span, node_span, key, numeric) in found {
-        let resolution = resolve_one(&key, span, resolved);
-        if resolution == Resolution::Unresolved {
+    for (node, span, node_span, key, numeric, labels_only) in found {
+        let resolution = if labels_only {
+            resolve_label(&key, resolved)
+        } else {
+            resolve_one(&key, span, resolved)
+        };
+        // Spec §Ref: a reference-style link that names no label is the
+        // literal text CommonMark makes of it, and says nothing.
+        if resolution == Resolution::Unresolved && !labels_only {
             resolved.diagnostics.push(Diagnostic::new(
                 Code::RefUnresolved,
                 span,
@@ -129,6 +140,39 @@ pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
             key,
             resolution,
         });
+    }
+}
+
+/// The labels alone, the document's own before the book's (spec §Ref,
+/// "reference-style form"): `[text][id]` is a reference only where `id`
+/// is a label, so it never reaches the bibliography, the glossary or an
+/// inventory, and a key it does not find says nothing — the node keeps
+/// the meaning CommonMark gives it.
+fn resolve_label(key: &str, resolved: &Resolved) -> Resolution {
+    let lower = key.to_ascii_lowercase();
+    let head = lower.split_once(':').map(|(h, _)| h);
+    let local = match head {
+        Some(prefix) if resolved.counters.is_declared(prefix) => resolved.labels.get(&lower),
+        Some(_) => None,
+        None => resolved.labels.get(&lower),
+    };
+    match local {
+        Some(label) => Resolution::Label {
+            target: label.node,
+            prefix: label.prefix.clone(),
+            number: resolved.formatted(label),
+        },
+        None => match resolved.sibling(&lower) {
+            Some(sibling) => Resolution::Sibling {
+                label: sibling
+                    .number
+                    .clone()
+                    .or_else(|| sibling.title.clone())
+                    .unwrap_or_else(|| sibling.key.clone()),
+                location: sibling.location.clone(),
+            },
+            None => Resolution::Unresolved,
+        },
     }
 }
 

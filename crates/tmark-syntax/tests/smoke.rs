@@ -257,3 +257,48 @@ fn empty_link_with_attributes_is_an_anchor() {
         .iter()
         .any(|d| d.code == tmark_ir::Code::AttrNoHost));
 }
+
+#[test]
+fn reference_style_links_are_textual_references() {
+    // Spec §Ref: `[text][id]` with no link definition is a `Link` to the
+    // label `id`; a definition makes it an ordinary link; a backslash
+    // anywhere in the spelling keeps it literal.
+    let parsed = parse(
+        "See [Plus haut][opengl-coordinates].\n\n[a][b]\n\n[b]: https://example.com\n\n\\[a\\][b2]\n",
+        FileId::default(),
+    );
+    let Block::Para(p) = &parsed.document.blocks[0] else {
+        panic!("{:?}", parsed.document.blocks)
+    };
+    let [Inline::Str(_), Inline::Link(link), Inline::Str(dot)] = p.content.as_slice() else {
+        panic!("{:?}", p.content)
+    };
+    assert_eq!(
+        link.target,
+        tmark_ir::Target::Reference("opengl-coordinates".to_string())
+    );
+    assert_eq!(tmark_ir::plain_text(&link.content), "Plus haut");
+    assert_eq!(dot.text, ".");
+
+    let Block::Para(p) = &parsed.document.blocks[1] else {
+        panic!("{:?}", parsed.document.blocks)
+    };
+    let [Inline::Link(link)] = p.content.as_slice() else {
+        panic!("{:?}", p.content)
+    };
+    assert!(
+        matches!(&link.target, tmark_ir::Target::Url(u) if u == "https://example.com"),
+        "a definition makes it a link: {:?}",
+        link.target
+    );
+
+    let Block::Para(p) = &parsed.document.blocks[2] else {
+        panic!("{:?}", parsed.document.blocks)
+    };
+    assert!(
+        p.content.iter().all(|i| !matches!(i, Inline::Link(_))),
+        "an escaped spelling is literal text: {:?}",
+        p.content
+    );
+    assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+}

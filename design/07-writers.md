@@ -191,7 +191,11 @@ replacement text is:
   paragraph would open an HTML block), `<span class="ts-counter" id=…
   data-counter data-key>`, `<span class="ts-index" data-tag…>`,
   `<span class="ts-smallcaps">`, `<u>`, `<span id class lang data-*>`,
-  `<abbr title>` for a glossary term;
+  `<abbr title>` for a glossary term — but an anchor on its own
+  (`[]{#id}`) keeps a *Markdown* spelling, `[](){#id}`: raw HTML is
+  stashed out of Python-Markdown's element tree and `mkdocs-autorefs`
+  registers the anchors it finds in that tree, so a `<span id>` would
+  be an id no page of the site could point at;
 - Markdown for references: `[FW-10](#fw:x)`, `[Figure 3](#fig:x)`,
   `[Figures 3 and 4](#fig:a)` for a group of one series, `[title](#sec:x)`
   (or `[Section 2]` with `sections: Number`), `[label](location)` for a
@@ -202,7 +206,11 @@ replacement text is:
   page and returned alone in `Lowered.bibliography`, or Pandoc `[@key]`
   with `citations: Passthrough` — `@key` (Pandoc's narrative form) for a
   `+key` item and, under the front matter's `citations.narrative`, for a
-  bare key; `WebOptions` has no override;
+  bare key; `WebOptions` has no override. The reference-style
+  `[text][id]` (spec §Ref) is the one reference the lowering leaves
+  byte for byte: it is already Markdown a site resolves, and
+  `mkdocs-autorefs` knows which page holds the anchor, which this
+  page does not;
 - `!!! type cls "title"` (`???`, `???+` when `collapsed`) for a `:::`
   callout the `!!!` line can carry, its body re-indented by `Out`;
 - the lowered text of the included file for `{include}(f)` (its

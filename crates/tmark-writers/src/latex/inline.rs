@@ -222,24 +222,40 @@ impl Latex<'_> {
                     self.out.push("}");
                 }
             }
-            Target::Anchor(id) => {
-                let id = escape::escape(id);
-                if n.content.is_empty() {
-                    self.out.push(&format!("\\ref{{{id}}}"));
+            Target::Anchor(id) => self.anchor(n, id),
+            // Spec §Ref: the reference-style form is a textual reference
+            // to the label it names, and the brackets CommonMark reads
+            // when it names none.
+            Target::Reference(key) => {
+                if refs::refers(self.res, n.meta.id, key) {
+                    self.anchor(n, key);
                 } else {
-                    let text = self.render_inlines(&n.content);
-                    let rendered = refs::textual(
-                        &self.opts.refs.textual_print,
-                        &format!("\\hyperref[{id}]{{{text}}}"),
-                        &format!("\\ref{{{id}}}"),
-                        &format!("\\pageref{{{id}}}"),
-                    );
-                    self.out.push(&rendered);
+                    self.out.push("[");
+                    self.inlines(&n.content);
+                    self.out.push(&format!("][{}]", escape::prose(key)));
                 }
             }
             Target::Document(_) => self.inlines(&n.content),
         }
         self.out.end(n.meta.id);
+    }
+
+    /// A link to an anchor of the document: `\ref` when it carries no
+    /// text of its own, else `\hyperref` through the textual template.
+    fn anchor(&mut self, n: &Link, key: &str) {
+        let id = escape::escape(key);
+        if n.content.is_empty() {
+            self.out.push(&format!("\\ref{{{id}}}"));
+            return;
+        }
+        let text = self.render_inlines(&n.content);
+        let rendered = refs::textual(
+            &self.opts.refs.textual_print,
+            &format!("\\hyperref[{id}]{{{text}}}"),
+            &format!("\\ref{{{id}}}"),
+            &format!("\\pageref{{{id}}}"),
+        );
+        self.out.push(&rendered);
     }
 
     /// `Ref`: labels through `\hyperref`/`\ref`, citations through

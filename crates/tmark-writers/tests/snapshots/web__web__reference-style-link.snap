@@ -2,4 +2,6 @@
 source: crates/tmark-writers/tests/web.rs
 expression: snapshot
 ---
-[](){#myanchor}
+[](){#claim}
+
+See [the claim][claim], not [that][no-such-label].

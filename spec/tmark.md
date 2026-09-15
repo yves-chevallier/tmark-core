@@ -989,7 +989,7 @@ Table: Inline text nodes. {#tbl:inline}
 | `Keystroke` | `{keys}[ctrl+s]` (verbatim, keys split on `+`) | `++ctrl+s++` | D | ts-keystrokes / `kbd` / `<kbd>` |
 | `Code` | `` `x` `` | (none) | C | engine-dependent |
 | `Code` (highlighted) | `{code lang=py}[print(1)]`, positional `{code py}[…]` (verbatim) | `` `#!py print(1)` `` | D | engine-dependent |
-| `Link` | `[text](url)`, `[text](#id)`, `<url>` | a bare URL (magic link, autolinked; the printer keeps it bare) | C | `\href` / `#link` / `<a>` |
+| `Link` | `[text](url)`, `[text](#id)`, `[text][id]` (§Ref, reference-style), `<url>` | a bare URL (magic link, autolinked; the printer keeps it bare) | C | `\href` / `#link` / `<a>` |
 | `Math` | `$x$` | `\(x\)` | C | `\(…\)` / `$x$` / MathJax |
 | `Quoted` | `"x"` | (none; the pair is read by the smart-symbol rule, Appendix @[app:pymdownx]) | C | `\enquote` / smart quotes / locale quotes |
 | `Abbr` | the acronym, with `*[HTML]: expansion` defined once (§@[sec:glossary]) | (none) | E | `\acrshort` / `#ts-abbr` / `<abbr>` |
@@ -1256,6 +1256,37 @@ what it lacks. The same discipline retires "above" and "below": floats
 move in print, so a position word is a reference in disguise, and
 `tmark check` hints `position-word` on it (and `hardcoded-number` on a
 "Figure 3" typed by hand). Both are style hints, never errors.
+
+A textual reference has a second spelling, CommonMark's *reference-style*
+link, which a document written for a site uses to point at an anchor
+without knowing which page holds it:
+
+```md
+[]{#opengl-coordinates}                 the anchor, on its page
+
+[as we saw][opengl-coordinates]         the reference, on any page
+```
+
+`[text][id]` is a link only when a link definition `[id]: url` matches it;
+none does here, and CommonMark then reads the whole spelling as literal
+text. TMark reads it, once nothing else has claimed it, as a textual
+reference to `id` — the same node as `[text](#id)`, kept apart from it
+because the two differ where it matters: `#id` is an address inside the
+rendered page, `[id]` is a name resolved wherever the label lives, which is
+what `mkdocs-autorefs` does on the web and what a book does across its
+documents. Both spellings are canonical (class C); the printer keeps the
+one the author wrote.
+
+The lookup is the *labels alone* — this document's, then the book's
+(§@[sec:lookup], steps 3 and its sibling documents) — never the
+bibliography, the glossary or an inventory: `[a review][knuth:1984]` is
+prose about a review, not a citation. A key that is no label is not a
+reference at all: the node keeps the meaning CommonMark gives it, literal
+text with its brackets, and reports nothing — `ref-unresolved` speaks for
+`@key`, which has no other reading, and would here fire on every ordinary
+sentence that happens to end a bracketed aside with a bracketed word. The
+reading applies to a reference whose text is one run of text; a text
+carrying markup (`[the **trace**][id]`) stays what CommonMark makes of it.
 
 #### Cite
 

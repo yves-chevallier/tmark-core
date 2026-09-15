@@ -155,3 +155,44 @@ fn includes_and_inventories_load_through_the_loader() {
     assert_eq!(r.refs[2].resolution, Resolution::Unresolved);
     assert!(r.diagnostics.iter().all(|d| d.code != Code::LabelDuplicate));
 }
+
+#[test]
+fn reference_style_links_resolve_against_the_labels_alone() {
+    // Spec §Ref: `[text][id]` is a textual reference when `id` is a label
+    // of the document or of the book, the literal brackets otherwise, and
+    // it never reaches the bibliography or the glossary.
+    let doc = parse(
+        "[]{#claim}\n\nSee [the claim][claim], [the finding][fw:boot], [a review][knuth:1984] and [none][nope].\n",
+        FileId::default(),
+    )
+    .document;
+    let options = ResolveOptions {
+        book: vec![tmark_registry::BookLabel {
+            key: "fw:boot".to_string(),
+            prefix: Some("fw".to_string()),
+            number: Some("FW-10".to_string()),
+            kind: tmark_registry::Host::Header,
+            title: Some("Boot loop".to_string()),
+            location: "findings.md#fw:boot".to_string(),
+        }],
+        ..ResolveOptions::default()
+    };
+    let r = resolve(&doc, &MemoryLoader::new(), &options);
+    assert_eq!(r.refs.len(), 4);
+    assert!(matches!(&r.refs[0].resolution, Resolution::Label { .. }));
+    assert!(
+        matches!(&r.refs[1].resolution, Resolution::Sibling { label, .. } if label == "FW-10"),
+        "a label of the book stands in for a missing local one"
+    );
+    assert_eq!(
+        r.refs[2].resolution,
+        Resolution::Unresolved,
+        "a bibliography key is not a label"
+    );
+    assert_eq!(r.refs[3].resolution, Resolution::Unresolved);
+    assert!(
+        codes(&r.diagnostics).is_empty(),
+        "an unresolved reference-style link says nothing: {:?}",
+        codes(&r.diagnostics)
+    );
+}

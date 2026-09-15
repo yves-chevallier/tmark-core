@@ -348,6 +348,7 @@ fn mkdocs_inline(out: &mut Out, inline: &Inline, ctx: Context, next: Option<char
         Inline::CounterItem(n) => mkdocs::counter(out, n),
         Inline::Keystroke(n) => mkdocs::keys(out, &n.keys),
         Inline::Aside(n) => mkdocs::aside(out, n, ctx),
+        Inline::Span(n) => mkdocs::anchor(out, n),
         Inline::RawInline(n) => mkdocs::raw_inline(out, n),
         _ => false,
     }
@@ -475,10 +476,20 @@ fn link(out: &mut Out, n: &tmark_ir::Link, ctx: Context) {
             ..ctx
         },
     );
+    // The reference-style form is a spelling of its own: `[text](#id)`
+    // points inside the page, `[text][id]` names a label wherever it
+    // lives (spec §Ref).
+    if let Target::Reference(id) = &n.target {
+        out.push("][");
+        out.push(id);
+        out.push("]");
+        return;
+    }
     out.push("](");
     match &n.target {
         Target::Url(u) | Target::Document(u) => out.push(&destination(u)),
         Target::Anchor(a) => out.push(&destination(&format!("#{a}"))),
+        Target::Reference(_) => unreachable!("written above"),
     }
     if let Some(title) = &n.title {
         out.push(" \"");

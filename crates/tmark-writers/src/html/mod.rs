@@ -932,9 +932,23 @@ impl Html<'_> {
     }
 
     fn link(&mut self, n: &Link) {
+        // Spec §Ref: a reference-style link that names no label is the
+        // literal text CommonMark makes of it.
+        if let Target::Reference(key) = &n.target {
+            if !refs::refers(self.res, n.meta.id, key) {
+                self.out.begin(n.meta.id);
+                self.out.push("[");
+                self.inlines(&n.content);
+                self.out.push(&format!("][{}]", escape::text(key)));
+                self.out.end(n.meta.id);
+                return;
+            }
+        }
         let (href, class) = match &n.target {
             Target::Url(url) => (url.clone(), ""),
-            Target::Anchor(id) => (format!("#{id}"), " class=\"reference\""),
+            Target::Anchor(id) | Target::Reference(id) => {
+                (format!("#{id}"), " class=\"reference\"")
+            }
             Target::Document(path) => (path.clone(), " class=\"document\""),
         };
         let mut a = format!("<a href=\"{}\"{class}", escape::attr(&href));
@@ -944,7 +958,7 @@ impl Html<'_> {
         a.push('>');
         self.out.begin(n.meta.id);
         self.out.push(&a);
-        if let Target::Anchor(id) = &n.target {
+        if let Target::Anchor(id) | Target::Reference(id) = &n.target {
             // A textual reference: the web template.
             let mut buf = std::mem::replace(&mut self.out, Out::scratch());
             self.inlines(&n.content);

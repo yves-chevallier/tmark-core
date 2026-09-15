@@ -511,6 +511,36 @@ impl Lowerer {
                     continue;
                 }
             }
+            if rest.starts_with('[') {
+                // `[text][id]`: the reference-style link of spec §Ref.
+                // The tokenizer leaves the spelling as text when no
+                // definition matches, so the scan sees only the form the
+                // resolution decides — a reference to the label `id`, or
+                // the literal brackets CommonMark makes of it. A
+                // backslash anywhere in the spelling is the author's
+                // literal text.
+                if let Some(link) = sugar::reference_link(text, i) {
+                    if !escaped(i, i + link.len) {
+                        flush(self, &mut buffer, buffer_start, i, out);
+                        let at = sub(self, i, i + link.len);
+                        let label = sub(self, link.text.start, link.text.end);
+                        let content = vec![Inline::Str(Str {
+                            meta: self.meta(label),
+                            text: text[link.text].to_string(),
+                        })];
+                        let meta = self.meta(at);
+                        out.push(Inline::Link(Link {
+                            meta,
+                            content,
+                            target: Target::Reference(link.id),
+                            title: None,
+                        }));
+                        i += link.len;
+                        buffer_start = i;
+                        continue;
+                    }
+                }
+            }
             if rest.starts_with(':') && !escaped(i, i + 1) {
                 if let Some((len, kind)) = sugar::shortcode(text, i) {
                     match kind {

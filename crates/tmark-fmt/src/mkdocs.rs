@@ -340,6 +340,23 @@ pub fn aside(out: &mut Out, n: &Aside, ctx: Context) -> bool {
     true
 }
 
+/// `[]{#id}` as `[](){#id}`, the empty-link anchor idiom (spec
+/// Appendix "Deprecation schedule"). Python-Markdown's `attr_list` hangs
+/// an attribute list on the element before it, and only the empty-link
+/// spelling gives it an element with that id: `mkdocs-autorefs` scans the
+/// element tree, where raw HTML is a stashed placeholder, so an anchor a
+/// site must be able to point at is written this way. Only a span with no
+/// content is an anchor; `[text]{#id}` is an attributed phrase.
+pub fn anchor(out: &mut Out, n: &tmark_ir::SpanNode) -> bool {
+    if !n.content.is_empty() || n.attrs.id.is_none() {
+        return false;
+    }
+    out.push("[](){");
+    out.push(&crate::attrs::items(&n.attrs));
+    out.push("}");
+    true
+}
+
 /// `{latex}[…]`, `{typst}[…]`, `{html}[…]`: the group is taken verbatim by
 /// the parser, so the text may hold no bracket and may not end in a
 /// backslash.

@@ -84,7 +84,8 @@ Profiles are a *table* (construct → spelling function), not subclasses.
 | `Figure:`, `Listing:` lines | `/// caption` block with `attrs: {id: …}` and the text | the attributes hold more than an id, or a text line is `///` |
 | `latex raw` fence | `/// latex … ///` | another format, or a `///` line inside |
 | `{include}(f)` | `--8<-- "f"` | a `base`, or a `"` in the path |
-| `$…$`, `$$…$$`, `---`, `::: figure`, `::: aside`, `::: name`, `yaml table`, `{underline}`, `[x]{…}`, `{{ var }}`, `@[see key, p. 3]`, `@doi:…` | canonical | |
+| `[]{#id}` anchor | `[](){#id}` (the only spelling `attr_list` turns into an element, hence the only one `mkdocs-autorefs` can register) | the span carries content: `[x]{#id}` is an attributed phrase |
+| `$…$`, `$$…$$`, `---`, `::: figure`, `::: aside`, `::: name`, `yaml table`, `{underline}`, `[x]{…}`, `[text][id]`, `{{ var }}`, `@[see key, p. 3]`, `@doi:…` | canonical | |
 
 Citation versus label is the spec's lookup rule (§Registries) applied to
 what the document itself declares, since the printer has no `Resolved`:
