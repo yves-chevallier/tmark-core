@@ -1,0 +1,30 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+<table class="ts-table" data-ts-table="1" markdown="block">
+<thead markdown="block">
+<tr markdown="block">
+<th markdown="span" rowspan="2">Op</th>
+<th markdown="span" colspan="2">Sens</th>
+</tr>
+<tr markdown="block">
+<th markdown="span">Court</th>
+<th markdown="span">Long</th>
+</tr>
+</thead>
+<tbody markdown="block">
+<tr markdown="block">
+<td markdown="span">`+`</td>
+<td markdown="span">plus</td>
+<td markdown="span">Addition *simple*</td>
+</tr>
+<tr markdown="block">
+<td markdown="span">`-`</td>
+<td markdown="span">moins</td>
+<td markdown="span">Voir [Les opérateurs](#sec:ops)</td>
+</tr>
+</tbody>
+</table>
+
+## Les opérateurs {#sec:ops}

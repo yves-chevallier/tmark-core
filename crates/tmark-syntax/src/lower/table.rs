@@ -62,23 +62,35 @@ impl Lowerer {
     /// mapping (the fence stays a code block); otherwise the model and
     /// whether a `table-*` diagnostic was reported, in which case the
     /// model is a best effort and the caller keeps the source.
+    ///
+    /// `payload` is the fence body with its offsets, when the body is a
+    /// verbatim slice of the source: a cell is then located in it and what
+    /// is parsed from the cell carries spans of the file (spec §Round-trip
+    /// and source spans).
     pub fn lower_yaml_table(
         &mut self,
         text: &str,
         span: Span,
+        ctx: &Ctx,
+        payload: Option<usize>,
     ) -> Result<(TableModel, bool), String> {
         let raw = table_yaml::parse_table(text)?;
         let rejected = !raw.findings.is_empty();
         for (code, message) in raw.findings {
             self.diag(code, span, message);
         }
+        let cells = Payload {
+            text,
+            at: payload,
+            span,
+        };
         let mut columns = raw.columns;
-        self.column_titles(&mut columns, span);
+        self.column_titles(&mut columns, ctx, &cells);
         let model = TableModel {
             settings: raw.settings,
             columns,
-            rows: self.rows(raw.rows, span),
-            footer: self.rows(raw.footer, span),
+            rows: self.rows(raw.rows, ctx, &cells),
+            footer: self.rows(raw.footer, ctx, &cells),
         };
         Ok((model, rejected))
     }
@@ -100,39 +112,39 @@ impl Lowerer {
     /// The header of every column of a `yaml table` parsed as inline
     /// Markdown. `name` stays the scalar as written: it is the key of
     /// named-row mode and what the printer writes back.
-    fn column_titles(&mut self, columns: &mut [Column], span: Span) {
+    fn column_titles(&mut self, columns: &mut [Column], ctx: &Ctx, cells: &Payload) {
         for column in columns {
             match column {
                 Column::Leaf(leaf) => {
                     if let Some(name) = leaf.name.clone() {
-                        let content = self.lower_fragment(&name, span);
+                        let content = self.cell_content(&name, ctx, cells);
                         leaf.title = rich_title(content);
                     }
                 }
                 Column::Group(group) => {
-                    let content = self.lower_fragment(&group.name.clone(), span);
+                    let content = self.cell_content(&group.name.clone(), ctx, cells);
                     group.title = rich_title(content);
-                    self.column_titles(&mut group.columns, span);
+                    self.column_titles(&mut group.columns, ctx, cells);
                 }
             }
         }
     }
 
-    fn rows(&mut self, rows: Vec<RawRow>, span: Span) -> Vec<Row> {
+    fn rows(&mut self, rows: Vec<RawRow>, ctx: &Ctx, cells: &Payload) -> Vec<Row> {
         rows.into_iter()
             .map(|row| match row {
                 RawRow::Separator { label, double_rule } => {
                     Row::Separator(Separator { label, double_rule })
                 }
-                RawRow::Data { cells, named } => Row::Data(DataRow {
-                    cells: cells
+                RawRow::Data { cells: data, named } => Row::Data(DataRow {
+                    cells: data
                         .into_iter()
                         .map(|cell| {
                             if cell.absorbed {
                                 Cell::absorbed()
                             } else {
                                 Cell {
-                                    content: self.lower_fragment(&cell.text, span),
+                                    content: self.cell_content(&cell.text, ctx, cells),
                                     rows: cell.rows,
                                     cols: cell.cols,
                                     align: cell.align,
@@ -145,6 +157,44 @@ impl Lowerer {
                 }),
             })
             .collect()
+    }
+
+    /// The text of one cell parsed as inline Markdown, anchored where the
+    /// payload spells it.
+    fn cell_content(&mut self, text: &str, ctx: &Ctx, cells: &Payload) -> Vec<Inline> {
+        let anchor = cells
+            .locate(text)
+            .map_or(cells.span, |(start, end)| self.span_of(ctx, start, end));
+        self.lower_fragment(text, anchor)
+    }
+}
+
+/// The body of a `yaml table` fence and where it sits in the source.
+struct Payload<'a> {
+    text: &'a str,
+    /// Local offset of `text` in the lowering's text; `None` when the body
+    /// is not a verbatim slice of it (an indented fence, whose body the
+    /// tokenizer dedents).
+    at: Option<usize>,
+    /// The fence, for a cell the payload does not spell verbatim.
+    span: Span,
+}
+
+impl Payload<'_> {
+    /// The local offsets of `text` in the payload, when it occurs there
+    /// exactly once. A cell whose text is not in the payload (a YAML
+    /// escape, a folded scalar) or occurs twice (two cells reading the
+    /// same) has no source of its own: the fence is its span.
+    fn locate(&self, text: &str) -> Option<(usize, usize)> {
+        let at = self.at?;
+        if text.is_empty() {
+            return None;
+        }
+        let found = self.text.find(text)?;
+        if self.text[found + text.len()..].contains(text) {
+            return None;
+        }
+        Some((at + found, at + found + text.len()))
     }
 }
 

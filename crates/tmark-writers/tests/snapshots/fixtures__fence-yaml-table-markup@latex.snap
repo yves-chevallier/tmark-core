@@ -1,0 +1,38 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\multirow{2}{*}{Op} & \multicolumn{2}{c}{Sens} \\
+\cmidrule(lr){2-3}
+ & Court & Long \\
+\midrule
+\tscodeinline{+} & plus & Addition \emph{simple} \\
+\tscodeinline{-\allowbreak{}} & moins & Voir Section~\ref{sec:ops} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Les opérateurs}\label{sec:ops}
+
+---requires---
+{
+  "packages": [
+    "booktabs",
+    "fvextra",
+    "multirow",
+    "tcolorbox"
+  ],
+  "fragments": [
+    "ts-code"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

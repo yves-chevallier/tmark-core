@@ -1138,9 +1138,11 @@ impl<'a> Lowerer<'a> {
             return String::new();
         };
         // Spans are those of the text when they are in range, in order,
-        // and every text run reads back from its span (a title parsed from
-        // an attribute value, a cell of a `yaml table`, carries offsets of
-        // the fragment alone).
+        // and every literal run reads back from its span. A fragment the
+        // lowering could not place — a title parsed from an attribute
+        // value with an escape in it, a cell a `yaml table` payload does
+        // not spell verbatim — carries the span of the construct it came
+        // from, and reads back as a slice of that construct instead.
         let mut previous = first.meta().span.start;
         let sequential = inlines.iter().all(|i| {
             let s = i.meta().span;
@@ -1149,12 +1151,21 @@ impl<'a> Lowerer<'a> {
             ok
         }) && {
             let mut runs_match = true;
-            tmark_ir::walk_inlines(inlines, &mut |n: NodeRef| {
-                if let NodeRef::Inline(Inline::Str(run)) = n {
+            tmark_ir::walk_inlines(inlines, &mut |n: NodeRef| match n {
+                NodeRef::Inline(Inline::Str(run)) => {
                     let slice = f.slice(run.meta.span);
                     runs_match &= slice == run.text
                         || (slice.contains('\\') && slice.replace('\\', "") == run.text);
                 }
+                // A code span or a math span holds its source verbatim,
+                // delimiters apart (a line end reads back as a space).
+                NodeRef::Inline(Inline::Code(run)) => {
+                    runs_match &= f.slice(run.meta.span).contains(run.text.trim());
+                }
+                NodeRef::Inline(Inline::Math(run)) => {
+                    runs_match &= f.slice(run.meta.span).contains(run.text.trim());
+                }
+                _ => {}
             });
             runs_match
         };

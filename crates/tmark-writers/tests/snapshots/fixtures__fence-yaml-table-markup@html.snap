@@ -1,0 +1,42 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+<table>
+<thead>
+<tr>
+<th rowspan="2">Op</th>
+<th colspan="2">Sens</th>
+</tr>
+<tr>
+<th>Court</th>
+<th>Long</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>+</code></td>
+<td>plus</td>
+<td>Addition <em>simple</em></td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td>moins</td>
+<td>Voir <a href="#sec:ops" class="reference">Section 1</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="sec:ops">Les opérateurs</h2>
+
+---requires---
+{
+  "packages": [],
+  "fragments": [],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

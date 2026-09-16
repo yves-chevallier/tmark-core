@@ -621,7 +621,12 @@ impl Lowerer {
         match node.as_str() {
             "code" => listing(self, Some(info.lang.clone())),
             "table" => match info.lang.as_str() {
-                "yaml" | "yml" => match self.lower_yaml_table(&code.value, span) {
+                "yaml" | "yml" => match self.lower_yaml_table(
+                    &code.value,
+                    span,
+                    ctx,
+                    fence_body_at(ctx, code.position.as_ref(), &code.value),
+                ) {
                     Ok((model, rejected)) => Block::Table(Table {
                         meta,
                         model,
@@ -1265,6 +1270,21 @@ impl Lowerer {
             position: CaptionPosition::After,
         })
     }
+}
+
+/// Local offset, in `ctx`'s text, of the body of a fence, when that body
+/// is a verbatim slice of it. `None` for an indented fence, whose body the
+/// tokenizer dedents line by line: nothing parsed out of it can be given
+/// a span of the source.
+fn fence_body_at(
+    ctx: &Ctx,
+    position: Option<&tmark_markdown::unist::Position>,
+    body: &str,
+) -> Option<usize> {
+    if body.is_empty() {
+        return None;
+    }
+    Some(position?.start.offset + ctx.slice(position).find(body)?)
 }
 
 /// Local offset, in `ctx`'s text, of the info string of a `!!!` line: the
