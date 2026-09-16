@@ -328,9 +328,9 @@ impl Html<'_> {
     }
 
     /// `<blockquote>`; an epigraph carries its `source` in a `<footer>`
-    /// (spec §BlockQuote). `attrs` prints id, class and lang alone, so the
-    /// attribute was dropped here while LaTeX wrote
-    /// `\\tsepigraph[source={…}]` and Typst `#ts-epigraph(source: …)`.
+    /// (spec §BlockQuote), where LaTeX writes `\tsepigraph[source={…}]`
+    /// and Typst `#ts-epigraph(source: …)`. It is written here rather
+    /// than through `attrs`, which prints id, class and lang alone.
     fn block_quote(&mut self, q: &BlockQuote) {
         self.out.push(&format!(
             "<blockquote{}{}>\n",

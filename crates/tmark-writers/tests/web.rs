@@ -642,3 +642,16 @@ fn a_reference_style_link_addresses_the_label_as_declared() {
         lower(md).text
     );
 }
+
+/// A code span is read before a link is, so a bracket inside one closes
+/// no link and must not be escaped: a backslash there is a backslash.
+#[test]
+fn a_bracket_inside_a_code_span_of_a_link_text_is_not_escaped() {
+    let md = "[](){#Idx}\n\nSee [the `array[i]` form][idx].\n";
+    let text = lower(md).text;
+    assert!(text.contains("[the `array[i]` form](#Idx)"), "{text}");
+    // Outside one it still is: the text may not close the link early.
+    let md = "[](){#idx}\n\nSee [a *[x]* b][idx].\n";
+    let text = lower(md).text;
+    assert!(text.contains("[a *\\[x\\]* b](#idx)"), "{text}");
+}

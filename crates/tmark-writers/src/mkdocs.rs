@@ -1860,7 +1860,45 @@ fn bare(s: &str) -> bool {
 
 /// Link text: brackets escaped.
 fn link_text(text: &str) -> String {
-    text.replace('[', "\\[").replace(']', "\\]")
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0;
+    while i < text.len() {
+        let rest = &text[i..];
+        // A code span is read before a link is, so a bracket inside one
+        // closes nothing and a backslash in it is a backslash: the run is
+        // copied as it stands, up to the closing run of the same length.
+        if rest.starts_with('`') {
+            let len = rest.bytes().take_while(|b| *b == b'`').count();
+            if let Some(end) = closing_run(text, i + len, &"`".repeat(len)) {
+                out.push_str(&text[i..end + len]);
+                i = end + len;
+                continue;
+            }
+        }
+        let c = rest.chars().next().expect("in bounds");
+        if c == '[' || c == ']' {
+            out.push('\\');
+        }
+        out.push(c);
+        i += c.len_utf8();
+    }
+    out
+}
+
+/// Where the run of backticks closing a code span opened with `fence`
+/// starts, at or after `from`: a run of exactly that length.
+fn closing_run(text: &str, from: usize, fence: &str) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut at = from;
+    while let Some(found) = text[at..].find(fence) {
+        let start = at + found;
+        let len = bytes[start..].iter().take_while(|b| **b == b'`').count();
+        if len == fence.len() {
+            return Some(start);
+        }
+        at = start + len;
+    }
+    None
 }
 
 /// A link destination: `<…>` when it holds whitespace or parentheses.
