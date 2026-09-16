@@ -344,25 +344,34 @@ impl Latex<'_> {
         });
     }
 
+    /// A cell's LaTeX, with a leading `[` brace-protected: the row break
+    /// and every booktabs rule take an optional argument
+    /// (`escape::guard_bracket`).
     fn cell_text(&mut self, cell: &Cell) -> String {
         let was = self.in_cell;
         self.in_cell = true;
         let text = self.contained(|w| w.render_inlines(&cell.content));
         self.in_cell = was;
-        text.trim().to_string()
+        let mut text = text.trim().to_string();
+        escape::guard_bracket(&mut text);
+        text
     }
 
     /// The header of a column: its inline Markdown when it carries any
     /// (`LeafColumn::title`), the escaped plain name otherwise.
     fn header_text(&mut self, title: &[Inline], name: Option<&str>) -> String {
         if title.is_empty() {
-            return escape::prose(name.unwrap_or(""));
+            let mut text = escape::prose(name.unwrap_or(""));
+            escape::guard_bracket(&mut text);
+            return text;
         }
         let was = self.in_cell;
         self.in_cell = true;
         let text = self.contained(|w| w.render_inlines(title));
         self.in_cell = was;
-        text.trim().to_string()
+        let mut text = text.trim().to_string();
+        escape::guard_bracket(&mut text);
+        text
     }
 
     /// `table.tex`.

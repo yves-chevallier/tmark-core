@@ -103,6 +103,12 @@ impl Out {
         self.buf.chars().next_back()
     }
 
+    /// What has been written ends with `suffix`, trailing whitespace and
+    /// line ends ignored.
+    pub fn ends_with(&self, suffix: &str) -> bool {
+        self.buf.trim_end().ends_with(suffix)
+    }
+
     pub fn is_empty(&self) -> bool {
         self.buf.is_empty()
     }

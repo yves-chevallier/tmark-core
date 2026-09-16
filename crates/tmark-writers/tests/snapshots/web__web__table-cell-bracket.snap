@@ -1,0 +1,8 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+| Directive                           | Role              |
+| ----------------------------------- | ----------------- |
+| [`#include`\][preprocessor-include] | Pastes a file     |
+| [note]                              | A literal bracket |

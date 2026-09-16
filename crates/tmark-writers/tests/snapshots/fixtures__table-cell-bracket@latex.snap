@@ -1,0 +1,34 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Directive} & \textbf{Role} \\
+\midrule
+{[}\tscodeinline{\#include}][preprocessor-include] & Pastes a file \\
+{[}note] & A literal bracket \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+---requires---
+{
+  "packages": [
+    "booktabs",
+    "fvextra",
+    "tabularx",
+    "tcolorbox"
+  ],
+  "fragments": [
+    "ts-code"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

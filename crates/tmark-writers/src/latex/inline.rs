@@ -140,6 +140,15 @@ impl Latex<'_> {
     /// `\LaTeXe{}` are the kernel's, the others `\tslogo{Name}` of
     /// `ts-typesetting`.
     fn prose(&mut self, text: &str) {
+        // A hard line break is `\\`, which scans for an optional
+        // `[⟨dimen⟩]` across the line end: a text run that opens with `[`
+        // right after one would be read as that argument. An empty group
+        // stops the scan; outside a table nothing here has to be the
+        // first token of its cell, so the guard goes on the command side
+        // (`escape::guard_bracket` does the cell side).
+        if text.starts_with('[') && self.out.ends_with("\\\\") {
+            self.out.push("{}");
+        }
         if !self.tex_logos {
             self.out.push(&escape::prose(text));
             return;

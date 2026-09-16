@@ -1,0 +1,35 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+<table>
+<thead>
+<tr>
+<th>Directive</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[<code>#include</code>][preprocessor-include]</td>
+<td>Pastes a file</td>
+</tr>
+<tr>
+<td>[note]</td>
+<td>A literal bracket</td>
+</tr>
+</tbody>
+</table>
+
+---requires---
+{
+  "packages": [],
+  "fragments": [],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

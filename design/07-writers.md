@@ -404,6 +404,24 @@ and options, §2 the LaTeX catalogue, §4 Typst math), the contract names of
   (`escaper.py:223`, latent bug reproduced for parity; fix both sides).
 - HTML `id`s on headings only when written; auto-slugs are LaTeX/Typst
   labels only (open question b: `python-slugify` on the plain text).
+- A `[` that opens a LaTeX table cell, a column name or a text run right
+  after a hard line break is brace-protected (`{[}`, `latex/escape.rs`
+  `guard_bracket`; fixture `table-cell-bracket`, `tests/brackets.rs`).
+  Every command that can stand there takes an optional argument and looks
+  for it with `\@ifnextchar[`, which skips spaces *and* line ends: the
+  row break `\\[⟨dimen⟩]`, booktabs' `\toprule`/`\midrule`/`\bottomrule`
+  `[⟨wd⟩]`, `\cmidrule[⟨wd⟩]`, `\addlinespace[⟨dimen⟩]`. An unresolved
+  reference-style link (`[text][id]`, spec §Ref) or a literal `[note]`
+  first in a cell was read as that argument and the run died on `Missing
+  number, treated as zero`. The guard goes on the **content** because a
+  guard on the command side is wrong twice over: `\tabularnewline` takes
+  the same optional argument as `\\`, and `\\{}` puts a group between the
+  row break and the next cell, which makes `\multicolumn` no longer the
+  first token of its cell — exactly what a spanning cell of a `yaml
+  table` opens with. Outside a table the guard is `{}` pushed after the
+  `\\` instead, since a text run there is not a cell. The Typst writer
+  escapes `[` unconditionally in markup (`typst/escape.rs::MARKUP`) and
+  its `\` line break takes no argument, so it has no twin of this bug.
 - `Requires.packages` lists what *structural* output needs (`ulem`,
   `csquotes`, `booktabs`, `tabularx`, `longtable`, `multirow`, `float`,
   `graphicx`, `caption`, `subcaption`, `enumitem`, `babel`, `glossaries`,
