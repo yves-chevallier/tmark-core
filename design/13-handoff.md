@@ -1,8 +1,82 @@
 # 13 — Handoff notes
 
-Three handoffs, newest first. Read `AGENTS.md`, then this file, then
+Four handoffs, newest first. Read `AGENTS.md`, then this file, then
 `11-roadmap.md`, then `design/reviews/`. Everything below is opinion from
 the inside of the work: verify it, do not trust it.
+
+## The Zensical-corpus round (2026-09-16)
+
+Branch `autorefs-anchors`. A 142-page French course site
+(`/home/ycr/handbook`, MkDocs Material → Zensical, PDF books through
+TeXSmith) was run against the core as a corpus; its migration notes
+(`NOTES-zensical.md` there) named five defects. Four were core bugs, each
+fixed at the layer that owned it and in its own commit; the fifth was not
+ours.
+
+- **A `[` that opens a LaTeX table cell** (`202354a`). `\\`, booktabs'
+  rules and `\addlinespace` all take an optional `[⟨dimen⟩]` and scan for
+  it past the line end, so a cell starting with `[` — typically an
+  unresolved `[text][id]` reference-style link — was eaten as that
+  argument (`Missing number, treated as zero`). The guard is `{[}` on the
+  *content*, not on the command: `\tabularnewline` takes the same
+  argument, and `\\{}` would stop `\multicolumn` being the first token of
+  its cell. Typst has no twin (it escapes `[` in markup). Fixture
+  `table-cell-bracket`, `tests/brackets.rs`.
+- **The braces-only fence info string** (`efbff73`, challenge C63).
+  Material's documented ```` ``` { .c .annotate } ```` gave a language of
+  `{`. The first class is the language, as superfences reads it;
+  deprecated, the fix is the reprint. Fixture `fence-info-braces`.
+- **`/// html | div[…]` and `::: div` on the web** (`d1a832b`, C64). The
+  `pymdownx.blocks.html` selector had no reading and the block became a
+  `RawBlock{html}` holding *Markdown*; and a `Div` was not lowered for
+  the web at all. Both halves now land on the spec's `<div … markdown>`
+  row. Fixture `container-html-block`.
+- **`include="file"` on a fence, on the web** (`f4b3648`, C65). The
+  spec's own replacement for `--8<--` made superfences render the fence
+  as an inline code span, so following the deprecation lost every
+  listing. The `mkdocs` profile splices the body through the `Loader`.
+- **Not ours: `\|` in a code span on the web.** Python-Markdown's
+  `tables` matches `\|` in `TableProcessor.RE_CODE_PIPES` only to keep it
+  from splitting the row and never removes it from the cell, and a code
+  span is atomic for the inline pass — so `` `x \| y` `` renders
+  `<code>x \| y</code>` with the backslash. Verified with the installed
+  extension set (`markdown` 3.10, `pymdownx.superfences`,
+  `inlinehilite`, `escapeall`). The lowering already leaves the row byte
+  for byte, and the `\|` must stay: GFM and TMark both split on a bare
+  `|`, code span or not (printer rule U2, fixture `table-pipe-in-code`).
+  The backslash belongs to TeXSmith's HTML postprocessor to strip, not
+  to the core.
+
+Measured on this branch: `cargo fmt --check`, `cargo clippy --workspace
+--all-targets -- -D warnings`, `cargo test --workspace` clean;
+`crates/tmark-py/tests` 50 passed after `maturin develop`; TeXSmith
+`uv run pytest -q` 1489 passed and `scripts/parity.py baseline --check`
+249/249 identical (no writer output of the corpus moved — no cell of it
+opens with `[`). On the handbook itself, `texsmith site build` now runs
+the whole book through TeX: `Missing number, treated as zero` and `Extra
+alignment tab` are both **0** (they were 104+ and the blocker of every
+table), 519 pages of `.xdv` are written, and the first remaining error
+is `LaTeX Error: Too deeply nested` on a fifth-level list
+(`enumitem`'s `\setlistdepth`, a template matter), with the rest of the
+tail being `hyperref` `\csname` trouble in `.aux` label entries. None of
+those is a core defect.
+
+### The cross-repository contract (additions this round)
+
+- **`lower_web` emits two new wrappers.** A `Div{name="div"}` becomes
+  `<div … markdown="1">` … `</div>`, and a fence with `include="file"`
+  is reprinted with the file's body and without the attribute. Anything
+  on TeXSmith's side that diffed lowered pages against a recorded
+  artifact must re-record.
+- **`Lowered.diagnostics` can now carry `include-missing`** for a fence
+  whose `include=` the loader cannot serve (the resolution collects no
+  fence include, so nothing else reports it). The severity is the code's
+  default, warning — not the `Info` the block-include case uses.
+- **Two new `deprecated` spellings** reach `tmark.lint` / `fixes`:
+  `{ .lang .cls }` fence info and `/// html | <selector>`. Both carry
+  the node reprint as their fix, so `tmark lint --fix` rewrites them.
+- `/// html | <selector>` no longer produces `RawBlock{format=html}` nor
+  a spurious `attr-no-host`: a consumer keyed on either changes.
 
 ## The review-and-fix round (2026-09-14)
 
