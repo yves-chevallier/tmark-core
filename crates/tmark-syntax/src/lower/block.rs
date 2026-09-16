@@ -714,6 +714,11 @@ impl Lowerer {
     ) -> Block {
         let span = self.span(ctx, c.position.as_ref());
         let meta = self.meta(span);
+        if c.marker == b'/' {
+            if let Some(block) = self.lower_html_block(c, span, ctx, document) {
+                return block;
+            }
+        }
         let (name, attrs, valid) = parse_container_info(&c.info);
         let mut attrs = attrs.unwrap_or_default();
         match self.attrs_base(ctx, c.position.as_ref()) {
@@ -985,6 +990,48 @@ impl Lowerer {
         out
     }
 
+    /// `/// html | <selector>` … `///` (`pymdownx.blocks.html`, spec §Div):
+    /// the element the selector names, wrapping a Markdown body — the same
+    /// `Div` node `<tag … markdown>` lowers to, so the `mkdocs` profile
+    /// prints it back as that HTML and the site keeps the layout. A bare
+    /// `/// html` with no selector is the raw fence it has always been
+    /// (`lower_slash_block`).
+    fn lower_html_block(
+        &mut self,
+        c: &tmark_markdown::mdast::TmarkContainer,
+        span: Span,
+        ctx: &Ctx,
+        document: &mut Document,
+    ) -> Option<Block> {
+        let (tag, mut attrs) = html_selector(&c.info)?;
+        let (options_len, options) = block_options(&c.value);
+        if attrs.id.is_none() {
+            attrs.id = options.id;
+        }
+        attrs.classes.extend(options.classes);
+        attrs.kv.extend(options.kv);
+        let stops = shift_stops(&c.stops, options_len);
+        let content = self.lower_content(&c.value[options_len..], &stops, ctx, document);
+        if registry::container(&tag).is_none() && !self.is_admonition(&tag) {
+            self.diag(
+                Code::ContainerUnknown,
+                span,
+                format!("`/// html | {tag}` is `::: {tag}`, which is not a known container"),
+            );
+        }
+        self.deprecated(
+            span,
+            "/// html | tag … ///",
+            &format!("::: {tag} {{…}} … :::"),
+        );
+        Some(Block::Div(Div {
+            meta: self.meta(span),
+            name: tag,
+            content,
+            attrs,
+        }))
+    }
+
     /// The deprecated `///` blocks that are not containers (Appendix
     /// "Deprecation schedule", examples-migration item 3): a backend name
     /// (`/// latex`) is a raw fence, `/// caption`, `/// figure-caption` and
@@ -1017,42 +1064,7 @@ impl Lowerer {
             "table-caption" => Some(CaptionKind::Table),
             _ => return None,
         };
-        // pymdownx.blocks options: indented `key: value` lines right after
-        // the opening fence, YAML.
-        let mut options_len = 0;
-        let mut yaml = String::new();
-        for line in c.value.split_inclusive('\n') {
-            let is_option = (line.starts_with("    ") || line.starts_with('\t'))
-                && line.trim_start().split_once(':').is_some_and(|(k, _)| {
-                    !k.is_empty()
-                        && k.bytes()
-                            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
-                });
-            if !is_option {
-                break;
-            }
-            yaml.push_str(line.trim_start());
-            options_len += line.len();
-        }
-        let mut attrs = Attrs::new();
-        if let Ok(serde_yaml_ng::Value::Mapping(options)) =
-            serde_yaml_ng::from_str::<serde_yaml_ng::Value>(&yaml)
-        {
-            if let Some(serde_yaml_ng::Value::Mapping(list)) = options.get("attrs") {
-                for (k, v) in list {
-                    let (Some(k), Some(v)) = (k.as_str(), v.as_str()) else {
-                        continue;
-                    };
-                    match k {
-                        "id" => attrs.id = Some(v.to_string()),
-                        "class" => attrs
-                            .classes
-                            .extend(v.split_whitespace().map(str::to_string)),
-                        _ => attrs.kv.push((k.to_string(), v.to_string())),
-                    }
-                }
-            }
-        }
+        let (options_len, attrs) = block_options(&c.value);
         let stops = shift_stops(&c.stops, options_len);
         let body = self.lower_content(&c.value[options_len..], &stops, ctx, document);
         let mut content = Vec::new();
@@ -1353,6 +1365,124 @@ fn shift_stops(stops: &[(usize, usize)], skip: usize) -> Vec<(usize, usize)> {
 /// one line, the `markdown` attribute bare or valued (`markdown="1"`,
 /// `"block"`, `"span"`). Returns the tag name and the attribute list built
 /// from `id` and `class`; other attributes are kept as keys.
+/// The option lines of a `pymdownx.blocks` fence: indented `key: value`
+/// YAML right after the opening line. Returns their byte length in the
+/// body and the attribute list the `attrs:` mapping carries.
+fn block_options(value: &str) -> (usize, Attrs) {
+    let mut options_len = 0;
+    let mut yaml = String::new();
+    for line in value.split_inclusive('\n') {
+        let is_option = (line.starts_with("    ") || line.starts_with('\t'))
+            && line.trim_start().split_once(':').is_some_and(|(k, _)| {
+                !k.is_empty()
+                    && k.bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+            });
+        if !is_option {
+            break;
+        }
+        yaml.push_str(line.trim_start());
+        options_len += line.len();
+    }
+    let mut attrs = Attrs::new();
+    if let Ok(serde_yaml_ng::Value::Mapping(options)) =
+        serde_yaml_ng::from_str::<serde_yaml_ng::Value>(&yaml)
+    {
+        if let Some(serde_yaml_ng::Value::Mapping(list)) = options.get("attrs") {
+            for (k, v) in list {
+                let (Some(k), Some(v)) = (k.as_str(), v.as_str()) else {
+                    continue;
+                };
+                match k {
+                    "id" => attrs.id = Some(v.to_string()),
+                    "class" => attrs
+                        .classes
+                        .extend(v.split_whitespace().map(str::to_string)),
+                    _ => attrs.kv.push((k.to_string(), v.to_string())),
+                }
+            }
+        }
+    }
+    (options_len, attrs)
+}
+
+/// The argument of a `pymdownx.blocks.html` fence, `/// html | <selector>`
+/// (spec §Div, Appendix "PyMdownX compatibility profile"): a CSS-like
+/// selector naming the element that wraps the body — a tag, then any
+/// number of `#id`, `.class` and `[name]` / `[name=value]` groups, the
+/// value bare, single- or double-quoted. `class` and `id` written as
+/// attributes land where the dotted and hashed forms do. `None` when the
+/// info string is not that form, so a bare `/// html` stays the raw
+/// fence it has always been.
+fn html_selector(info: &str) -> Option<(String, Attrs)> {
+    let rest = info.trim().strip_prefix("html")?;
+    let selector = rest.trim_start().strip_prefix('|')?.trim();
+    let tag_len = selector
+        .bytes()
+        .take_while(|b| b.is_ascii_alphanumeric() || *b == b'-')
+        .count();
+    if tag_len == 0 || !selector.as_bytes()[0].is_ascii_alphabetic() {
+        return None;
+    }
+    let tag = selector[..tag_len].to_ascii_lowercase();
+    let mut attrs = Attrs::new();
+    let mut rest = &selector[tag_len..];
+    while !rest.is_empty() {
+        if let Some(after) = rest.strip_prefix('[') {
+            let (name, after) = ident(after.trim_start())?;
+            let after = after.trim_start();
+            let (value, after) = match after.strip_prefix('=') {
+                Some(after) => quoted_or_ident(after.trim_start())?,
+                None => (String::new(), after),
+            };
+            rest = after.trim_start().strip_prefix(']')?;
+            put(&mut attrs, &name.to_ascii_lowercase(), value);
+            continue;
+        }
+        let (sigil, after) = rest.split_at(1);
+        let (name, after) = ident(after)?;
+        match sigil {
+            "#" => attrs.id = Some(name),
+            "." => attrs.classes.push(name),
+            _ => return None,
+        }
+        rest = after;
+    }
+    Some((tag, attrs))
+}
+
+/// One selector identifier: the characters `pymdownx.blocks.html` reads
+/// in a tag, class, id or attribute name.
+fn ident(s: &str) -> Option<(String, &str)> {
+    let len = s
+        .bytes()
+        .take_while(|b| !b.is_ascii() || b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_'))
+        .count();
+    (len > 0).then(|| (s[..len].to_string(), &s[len..]))
+}
+
+/// An attribute value: `"…"`, `'…'` or a bare identifier.
+fn quoted_or_ident(s: &str) -> Option<(String, &str)> {
+    for quote in ['"', '\''] {
+        if let Some(after) = s.strip_prefix(quote) {
+            let end = after.find(quote)?;
+            return Some((after[..end].to_string(), &after[end + 1..]));
+        }
+    }
+    ident(s)
+}
+
+/// `class` and `id` written as attributes go where `.cls` and `#id` do.
+fn put(attrs: &mut Attrs, name: &str, value: String) {
+    match name {
+        "id" => attrs.id = Some(value),
+        "class" => attrs
+            .classes
+            .extend(value.split_whitespace().map(str::to_string)),
+        _ => attrs.kv.push((name.to_string(), value)),
+    }
+}
+
 fn markdown_tag(line: &str) -> Option<(String, Attrs)> {
     let line = line.trim();
     let inner = line.strip_prefix('<')?.strip_suffix('>')?;

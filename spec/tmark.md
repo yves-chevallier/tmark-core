@@ -1809,6 +1809,16 @@ the only container spelling a Python-Markdown site renders, and the
 `mkdocs` profile of `tmark fmt` emits it for every `Div`
 (§@[sec:roadmap]). HTML without the attribute is raw (§@[sec:raw]).
 
+`pymdownx.blocks.html` spells the same thing as a block fence, `/// html |
+<selector>` … `///`, the selector a tag followed by any number of `#id`,
+`.class` and `[name]` / `[name=value]` groups
+(`div[class='two-column-list']`, `div#hero.wide[style='…']`). It is the
+same `Div`: the tag is the container name, the selector's id, classes and
+attributes are the attribute list, and the body is Markdown. Class E,
+deprecated (Appendix @[app:deprecations]) because `::: name` and the
+`md_in_html` spelling both say it already. `/// html` with no selector is
+not this construct: it is the raw-fence sugar of §@[sec:raw].
+
 ### Raw passthrough {#sec:raw}
 
 Escape hatches are explicit, backend-tagged, invisible to other backends, and
@@ -2313,6 +2323,7 @@ Table: PyMdownX sugar accepted under the compatibility profile. {#tbl:compat}
 | `[=75% "Review"]`, `[=15/20 "…"]`, `{: .thin}` | `ProgressBar` (§@[sec:inline]) | E | the percentage form is canonical; the fraction and the `{: ` colon are deprecated, Appendix @[app:deprecations] |
 | `=== "Title"` and its indented body | `::: tab {title=…}` inside `::: tabs` (§@[sec:containers]) | E | kept indefinitely: MkDocs Material renders it |
 | `<div class="x" markdown>` | `::: div {.x}` (§@[sec:containers]) | E | `md_in_html`; kept indefinitely, emitted by the `mkdocs` profile |
+| `/// html \| div[class='x']` … `///` | `::: div {.x}` (§@[sec:containers]) | E | `pymdownx.blocks.html`; the selector's tag is the container name; deprecated, Appendix @[app:deprecations] |
 | `{: .cls #id}` | `{.cls #id}` | E | Python-Markdown `attr_list` colon; deprecated |
 | `{ .c .annotate }` as a whole fence info string | `c {.annotate}` | E | superfences' braces-only spelling: the first class is the language (§@[sec:grammar], family 4); deprecated, Appendix @[app:deprecations] |
 | `[[Page Title]]`, optional label after a vertical bar | `Link` to the project file | D | wiki links; which file a title names is the site's *(processor)*, so the link is kept as typed and reported `compat-unsupported` |
@@ -2389,6 +2400,7 @@ Table: Deprecated spellings and their horizons. {#tbl:deprecations}
 | `/// latex … ///` | `latex raw` fence | draft 3 | fmt |
 | `latex render` fence (draft 2) | `latex raw` | draft 3 | never shipped |
 | `/// caption`, `/// figure-caption` | `Kind: … {#id}` caption line | draft 2 | fmt |
+| `/// html \| <selector>` … `///` | `::: div {…}` | draft 3 | fmt |
 | `{index:registry}[…]` | `{index registry=…}[…]` | draft 3 | fmt |
 | `{index}[…]{b}` / `{i}` | `{index main=true}[…]` / content markup | draft 3 | fmt |
 | `{margin}[…]`, `{margin}[…]{l}` / `{r}` / `{o}` / `{i}` | `{aside}[…]`, `{aside side=left}[…]` | draft 3 | fmt |

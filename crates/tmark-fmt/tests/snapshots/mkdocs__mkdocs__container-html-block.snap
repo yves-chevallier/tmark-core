@@ -1,0 +1,8 @@
+---
+source: crates/tmark-fmt/tests/mkdocs.rs
+expression: mkdocs(&canonical)
+---
+<div class="two-column-list" markdown>
+1. one
+2. two
+</div>

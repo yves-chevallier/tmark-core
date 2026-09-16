@@ -4,9 +4,11 @@ expression: snapshot
 ---
 This <span id="claim">claim</span> and [](){#top} are anchors.
 
-::: div {#d1}
+<div id="d1" markdown="1">
+
 A block.
-:::
+
+</div>
 
 <figure markdown="span" class="ts-subfigures">
 ![Left](l.svg){#fig:u}

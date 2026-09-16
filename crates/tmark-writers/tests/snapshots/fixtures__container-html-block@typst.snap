@@ -1,0 +1,30 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+#ts-div("div", class: ("two-column-list",))[
++ one
++ two
+]
+
+---requires---
+{
+  "packages": [
+    "epigraph",
+    "graphicx",
+    "marginnote",
+    "multicol",
+    "progressbar",
+    "xcolor"
+  ],
+  "fragments": [
+    "ts-typesetting"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

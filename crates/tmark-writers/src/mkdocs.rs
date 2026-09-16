@@ -446,6 +446,7 @@ impl<'a> Lowerer<'a> {
                 _ => None,
             },
             Block::Include(i) => self.include(f, i),
+            Block::Div(d) => self.div(f, d),
             Block::Plain(_)
             | Block::BlockQuote(_)
             | Block::BulletList(_)
@@ -453,7 +454,6 @@ impl<'a> Lowerer<'a> {
             | Block::DefinitionList(_)
             | Block::HorizontalRule(_)
             | Block::Caption(_)
-            | Block::Div(_)
             | Block::Comment(_) => None,
         }
     }
@@ -909,6 +909,42 @@ impl<'a> Lowerer<'a> {
             .get(kind)
             .and_then(|d| d.counter.clone())
             .or_else(|| registry::admonition(kind).and_then(|k| k.counter.map(str::to_string)))
+    }
+
+    /// `::: div {.x}` → `<div class="x" markdown="1">` … `</div>` (spec
+    /// §Div: `md_in_html` is the only container a Python-Markdown site
+    /// renders, and the compatibility table's `<div markdown>` row is what
+    /// the `mkdocs` profile emits). It is also where `/// html | div[…]`
+    /// lands, so a page keeps the layout the author wrote.
+    ///
+    /// Only `div` is lowered: `tabs` and `tab` are Material's own
+    /// construct (`=== "Title"`), `multicolumn` has no Material element,
+    /// and an unknown name is the spec's degradation contract — all three
+    /// keep their bytes. A container the author already wrote as HTML
+    /// keeps its bytes too: there is nothing to splice.
+    fn div(&mut self, f: &File, d: &tmark_ir::Div) -> Option<String> {
+        if d.name != "div" || f.slice(d.meta.span).starts_with('<') {
+            return None;
+        }
+        let mut out = String::from("<div");
+        if let Some(id) = d.attrs.id() {
+            out.push_str(&format!(" id=\"{}\"", escape::attr(id)));
+        }
+        if !d.attrs.classes.is_empty() {
+            out.push_str(&format!(
+                " class=\"{}\"",
+                escape::attr(&d.attrs.classes.join(" "))
+            ));
+        }
+        for (k, v) in &d.attrs.kv {
+            out.push_str(&format!(" {}=\"{}\"", k, escape::attr(v)));
+        }
+        out.push_str(" markdown=\"1\">\n\n");
+        let mut body = Out::scratch();
+        self.nested(f, &d.content, &mut body);
+        out.push_str(&body.finish_text());
+        out.push_str("\n\n</div>");
+        Some(out)
     }
 
     fn aside_block(&mut self, f: &File, aside: &Aside) -> String {

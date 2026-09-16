@@ -126,6 +126,23 @@ A margin *note* with [FW-03](#fw:ota).
 
 </aside>
 
+<div id="layout" class="two-column-list" markdown="1">
+
+- one
+- two
+
+</div>
+
+<div class="wrapper" markdown="1">
+
+Written the pymdownx way.
+
+</div>
+
+<div class="kept" markdown>
+Already HTML.
+</div>
+
 Inline <span class="ts-aside" data-side="right">margin note</span> and <span class="ts-index" data-tag="hal" data-tag1="layer"></span>, <span class="ts-index" data-tag="boot" data-main></span>,
 <span class="ts-smallcaps">nasa</span>, <span class="ts-smallcaps">caps</span>, ++ctrl+alt+s++, ==x==, ~~y~~, H~2~O,
 E=mc^2^, `#!py print(1)`, <u>u</u>, <span id="sp" class="c" lang="fr">x</span>,

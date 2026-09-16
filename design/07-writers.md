@@ -191,6 +191,11 @@ replacement text is:
   paragraph would open an HTML block), `<span class="ts-counter" id=…
   data-counter data-key>`, `<span class="ts-index" data-tag…>`,
   `<span class="ts-smallcaps">`, `<u>`, `<span id class lang data-*>`,
+  `<div id class … markdown="1">` for a `::: div` (the only container
+  lowered: `tabs` and `tab` are Material's own `=== "Title"`,
+  `multicolumn` has no Material element, an unknown name is the
+  degradation contract, and a container the author already wrote as
+  `<div … markdown>` has nothing to splice),
   `<abbr title>` for a glossary term — but an anchor on its own
   (`[]{#id}`) keeps a *Markdown* spelling, `[](){#id}`: raw HTML is
   stashed out of Python-Markdown's element tree and `mkdocs-autorefs`

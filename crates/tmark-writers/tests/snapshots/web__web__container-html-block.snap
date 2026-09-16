@@ -2,8 +2,9 @@
 source: crates/tmark-writers/tests/web.rs
 expression: snapshot
 ---
-<div class="grid cards" markdown="1">
+<div class="two-column-list" markdown="1">
 
-Some **bold** inside.
+1. one
+2. two
 
 </div>

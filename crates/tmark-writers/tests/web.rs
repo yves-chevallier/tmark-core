@@ -212,6 +212,19 @@ In a right triangle, $a^2 + b^2 = c^2$.
 A margin *note* with @fw:ota.
 :::
 
+::: div {#layout .two-column-list}
+- one
+- two
+:::
+
+/// html | div[class='wrapper']
+Written the pymdownx way.
+///
+
+<div class="kept" markdown>
+Already HTML.
+</div>
+
 Inline {aside side=right}[margin note] and {index}[hal][layer], #[**boot**],
 {sc}[nasa], __caps__, {keys}[ctrl+alt+s], {mark}[x], {del}[y], H{sub}[2]O,
 E=mc{sup}[2], {code py}[print(1)], {underline}[u], [x]{#sp .c lang=fr},
@@ -320,6 +333,10 @@ fn every_row_of_the_table() {
     has("<div class=\"admonition theorem\" id=\"thm:pyth\" markdown=\"1\">\n<p class=\"admonition-title\">Theorem 1 (Pythagoras)</p>\n\nIn a right triangle, $a^2 + b^2 = c^2$.\n\n</div>");
     // Asides, index, inline sugar, spans, raw, media.
     has("<aside class=\"ts-aside\" data-side=\"left\" markdown=\"1\">\n\nA margin *note* with [FW-03](#fw:ota).\n\n</aside>");
+    has("<div id=\"layout\" class=\"two-column-list\" markdown=\"1\">\n\n- one\n- two\n\n</div>");
+    has("<div class=\"wrapper\" markdown=\"1\">\n\nWritten the pymdownx way.\n\n</div>");
+    // A container already written as HTML keeps its bytes.
+    has("<div class=\"kept\" markdown>\nAlready HTML.\n</div>");
     has("Inline <span class=\"ts-aside\" data-side=\"right\">margin note</span> and <span class=\"ts-index\" data-tag=\"hal\" data-tag1=\"layer\"></span>, <span class=\"ts-index\" data-tag=\"boot\" data-main></span>,\n<span class=\"ts-smallcaps\">nasa</span>, <span class=\"ts-smallcaps\">caps</span>, ++ctrl+alt+s++, ==x==, ~~y~~, H~2~O,\nE=mc^2^, `#!py print(1)`, <u>u</u>, <span id=\"sp\" class=\"c\" lang=\"fr\">x</span>,\n<b>raw</b>,,\nand web only.");
     assert!(!text.contains("\\clearpage"));
     has("<hr class=\"raw\" />");
