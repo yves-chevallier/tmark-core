@@ -10,6 +10,7 @@ epigraph:
 
 # Reliability
 
-<blockquote class="ts-epigraph">Simplicity is prerequisite for reliability.<footer>Edsger W. Dijkstra</footer></blockquote>
+> Simplicity is prerequisite for reliability.
+> {.epigraph source="Edsger W. Dijkstra"}
 
 Everything else follows.

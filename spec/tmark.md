@@ -711,7 +711,7 @@ Table: The metadata keys, read by TMark. {#tbl:keys-meta}
 | `date` | ISO date, free text, or `commit` | absent | `commit` is resolved by the processor from the repository *(processor)*; TMark keeps it as written. |
 | `id` | string | absent | Document identifier, the head of every key the document publishes for cross-document references. |
 | `lang` | BCP 47 tag (`fr`, `en-GB`) | template's | Document language: hyphenation, quotes, list-of-figures words, typographic spacing. |
-| `epigraph` | `{quote, source}` | absent | An epigraph set under the document's opening heading (§@[sec:structure]). |
+| `epigraph` | `{quote, source}` | absent | The document's epigraph, `quote` and `source` as plain text. TMark types the key and renders nothing from it: where an epigraph is set on a page is the consumer's decision, and a consumer that has made it splices a `> {.epigraph}` quote (§BlockQuote). |
 
 Table: The `press` groups, and who reads them. {#tbl:keys-press}
 
@@ -895,13 +895,13 @@ Backends: `\tslead{…}`, a bold run-in, `<p><strong class="lead">`.
 
 `>`; class C. The attribute list is a line of its own closing the quote
 (Table @[tbl:hosts]); a quote tagged `{.epigraph}` renders as an epigraph
-(`\tsepigraph`, `#ts-epigraph`, `<blockquote class="epigraph">`), and the
-front-matter `epigraph:` key places one under the document's opening
-heading — between that heading and its content, or at the top of the
-document when it opens with no heading. Its `quote` and `source` are
-plain text, not Markdown. The web lowering prints it as
-`<blockquote class="ts-epigraph">` with the source in a `<footer>`, the
-`ts-` being the lowering's class prefix.
+(`\tsepigraph`, `#ts-epigraph`, `<blockquote class="epigraph">`), wherever
+the quote sits. The front-matter `epigraph:` key (Table @[tbl:keys-meta])
+names the same thing in metadata — its `quote` and `source` are plain
+text, not Markdown — and says nothing about where it goes: TMark types the
+key, and a consumer that decides an epigraph belongs under the opening
+heading, or on a title page, or nowhere, splices the quote there itself.
+No writer reads the key.
 Backends otherwise: `displayquote` (csquotes), `#quote(block: true)`,
 `<blockquote>`.
 

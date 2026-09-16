@@ -1,10 +1,14 @@
 # Front matter, epigraph
 
-Spec §BlockQuote and the metadata table: `epigraph: {quote, source}` is set
-under the document's opening heading, between that heading and its content.
-The writers render it as the block quote a `> {.epigraph}` line makes, so
-the key needs no node of its own in the IR — the front matter keeps it and
-each writer splices it where the spec says.
+Spec §BlockQuote and the metadata table: `epigraph: {quote, source}` is a
+typed front-matter key and nothing more. The core reads it into
+`Keys::epigraph` — the schema declares it, the printer gives it back — and
+renders it nowhere: where an epigraph belongs on a page is the consumer's
+decision, not the core's (challenge C69). What the core does render is the
+block quote a consumer splices, `> {.epigraph}` with its `source`, wherever
+that consumer puts it; the front-matter key below and the quote under the
+heading are the same epigraph written twice, and only the quote reaches a
+backend.
 
 ## input
 
@@ -16,6 +20,9 @@ epigraph:
 ---
 
 # Reliability
+
+> Simplicity is prerequisite for reliability.
+> {.epigraph source="Edsger W. Dijkstra"}
 
 Everything else follows.
 ```
@@ -30,6 +37,9 @@ epigraph:
 ---
 
 # Reliability
+
+> Simplicity is prerequisite for reliability.
+> {.epigraph source="Edsger W. Dijkstra"}
 
 Everything else follows.
 ```
@@ -57,6 +67,31 @@ Everything else follows.
           "text": "Reliability"
         }
       ]
+    },
+    {
+      "type": "BlockQuote",
+      "content": [
+        {
+          "type": "Para",
+          "content": [
+            {
+              "type": "Str",
+              "text": "Simplicity is prerequisite for reliability."
+            }
+          ]
+        }
+      ],
+      "attrs": {
+        "classes": [
+          "epigraph"
+        ],
+        "kv": [
+          [
+            "source",
+            "Edsger W. Dijkstra"
+          ]
+        ]
+      }
     },
     {
       "type": "Para",
@@ -97,7 +132,6 @@ Everything else follows.
 <h1>Reliability</h1>
 <blockquote class="epigraph">
 <p>Simplicity is prerequisite for reliability.</p>
-<footer>Edsger W. Dijkstra</footer>
 </blockquote>
 <p>Everything else follows.</p>
 ```

@@ -17,7 +17,7 @@ use tmark_ir::{
 };
 use tmark_registry::{Resolution, Resolved};
 
-use crate::common::{abbr, epigraph, logos, media, refs, text, zero, Out};
+use crate::common::{abbr, logos, media, refs, text, zero, Out};
 use crate::{Backend, Body, Media, Requires, Writer, WriterOptions};
 
 /// The HTML writer.
@@ -43,7 +43,7 @@ impl Writer for HtmlWriter {
             lang: refs::language(opts.lang.as_deref(), doc, res),
             container: 0,
         };
-        w.blocks(&epigraph::blocks(doc));
+        w.blocks(&doc.blocks);
         w.footnotes();
         w.bibliography();
         w.req.close();
@@ -327,8 +327,6 @@ impl Html<'_> {
         }
     }
 
-    /// `<blockquote>`; an epigraph carries its `source` in a `<footer>`
-    /// (spec §BlockQuote), which is where the class expects it.
     fn block_quote(&mut self, q: &BlockQuote) {
         self.out.push(&format!(
             "<blockquote{}{}>\n",
@@ -336,12 +334,6 @@ impl Html<'_> {
             self.src(&q.meta)
         ));
         self.contained(|w| w.blocks(&q.content));
-        if q.attrs.has_class("epigraph") {
-            if let Some(source) = q.attrs.get("source") {
-                self.out
-                    .push(&format!("<footer>{}</footer>\n", escape::text(source)));
-            }
-        }
         self.out.push("</blockquote>\n");
     }
 

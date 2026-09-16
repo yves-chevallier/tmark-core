@@ -124,14 +124,6 @@ those anchors can be renamed back.
   wrapper and the rest of the page rendered inside it. Anything on
   TeXSmith's side diffing lowered pages against a recorded artifact must
   re-record a page with a callout inside a numbered or labelled one.
-- **The front-matter `epigraph:` key is rendered now** (C69), by all four
-  writers: `\tsepigraph`, `#ts-epigraph`, `<blockquote
-  class="epigraph">` with a `<footer>`, and `<blockquote
-  class="ts-epigraph">` on a lowered page — under the document's opening
-  heading in each. It was declared and read by nobody before, so any page
-  with the key in its front matter gains a block in every backend, and a
-  recorded artifact of such a page must be re-recorded. TeXSmith's site
-  stylesheet owns the web appearance of `ts-epigraph`.
 
 ### Known and left
 

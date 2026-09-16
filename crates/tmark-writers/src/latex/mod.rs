@@ -24,7 +24,7 @@ use tmark_ir::{
 };
 use tmark_registry::Resolved;
 
-use crate::common::{abbr, epigraph, logos, media, refs, Out};
+use crate::common::{abbr, logos, media, refs, Out};
 use crate::{Backend, Body, CodeEngine, Media, Requires, Writer, WriterOptions};
 
 /// The LaTeX writer.
@@ -52,7 +52,7 @@ impl Writer for LatexWriter {
             tex_logos: logos::enabled(doc),
             narrative: refs::narrative(opts.citations.narrative, doc),
         };
-        w.blocks(&epigraph::blocks(doc));
+        w.blocks(&doc.blocks);
         w.req.close();
         let (text, map) = w.out.finish();
         Body {

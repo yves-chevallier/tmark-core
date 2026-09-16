@@ -17,7 +17,7 @@ use tmark_ir::{
 };
 use tmark_registry::Resolved;
 
-use crate::common::{abbr, epigraph, logos, media, refs, Out};
+use crate::common::{abbr, logos, media, refs, Out};
 use crate::{Backend, Body, Media, Requires, Writer, WriterOptions};
 
 /// The Typst writer.
@@ -43,7 +43,7 @@ impl Writer for TypstWriter {
             narrative: refs::narrative(opts.citations.narrative, doc),
             container: 0,
         };
-        w.blocks(&epigraph::blocks(doc));
+        w.blocks(&doc.blocks);
         w.req.close();
         let (text, map) = w.out.finish();
         Body {
