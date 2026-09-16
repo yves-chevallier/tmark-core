@@ -132,6 +132,7 @@ Everything else follows.
 <h1>Reliability</h1>
 <blockquote class="epigraph">
 <p>Simplicity is prerequisite for reliability.</p>
+<footer>Edsger W. Dijkstra</footer>
 </blockquote>
 <p>Everything else follows.</p>
 ```

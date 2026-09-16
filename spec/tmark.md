@@ -895,8 +895,8 @@ Backends: `\tslead{…}`, a bold run-in, `<p><strong class="lead">`.
 
 `>`; class C. The attribute list is a line of its own closing the quote
 (Table @[tbl:hosts]); a quote tagged `{.epigraph}` renders as an epigraph
-(`\tsepigraph`, `#ts-epigraph`, `<blockquote class="epigraph">`), wherever
-the quote sits. The front-matter `epigraph:` key (Table @[tbl:keys-meta])
+(`\tsepigraph`, `#ts-epigraph`, `<blockquote class="epigraph">` with the
+`source` attribute in a `<footer>`), wherever the quote sits. The front-matter `epigraph:` key (Table @[tbl:keys-meta])
 names the same thing in metadata — its `quote` and `source` are plain
 text, not Markdown — and says nothing about where it goes: TMark types the
 key, and a consumer that decides an epigraph belongs under the opening
