@@ -249,7 +249,7 @@ impl Lowerer {
                     let (attrs, attrs_end) =
                         self.take_adjacent_attrs(nodes, &mut index, n.position.as_ref(), ctx);
                     let meta = self.meta(self.host_span(ctx, span, attrs_end));
-                    let alt = self.lower_fragment(&n.alt, span);
+                    let alt = self.lower_fragment_in(ctx, n.position.as_ref(), &n.alt, span);
                     out.push(Inline::Image(Image {
                         meta,
                         src: n.url.clone(),
@@ -262,7 +262,7 @@ impl Lowerer {
                     let (attrs, attrs_end) =
                         self.take_adjacent_attrs(nodes, &mut index, n.position.as_ref(), ctx);
                     let meta = self.meta(self.host_span(ctx, span, attrs_end));
-                    let alt = self.lower_fragment(&n.alt, span);
+                    let alt = self.lower_fragment_in(ctx, n.position.as_ref(), &n.alt, span);
                     let (url, _) = self
                         .definitions
                         .get(&n.identifier)

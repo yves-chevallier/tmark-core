@@ -147,12 +147,15 @@ Every node carries a source span
     whole: the title of an admonition (`!!! note "…"`, `{title="…"}`), an
     image's alternative text, a cell of a `yaml table`. Where that string
     is a verbatim slice of the file, its nodes carry spans of that slice,
-    like any other node. Where it is not — a quoted value with an escape in
-    it, a YAML scalar the payload folds or spells twice — it has no source
-    of its own, and every node parsed from it carries the span of the
-    *construct* it came from: the whole marker line, the whole fence. A
-    tool reading the file at those spans then finds the construct, not the
-    node, and prints the node rather than splicing it.
+    like any other node. Where it is not — a quoted value with an escape
+    in it, a YAML scalar the payload folds or spells twice, an alt the
+    tokenizer has already stripped of its markup — it has no source of its
+    own: its nodes are anchored at the *construct* it came from, the whole
+    marker line or the whole fence, and the offsets they carry are offsets
+    in the fragment. Such a span points inside the construct and is no
+    slice of the node. A tool must therefore do what the writers do before
+    splicing at a span — check that every literal run it holds reads back
+    from its own span — and print the node where one does not.
 
 Edits are local
 :   A tool that changes one node (rename a label, rewrite a citation, add
@@ -2449,7 +2452,7 @@ Table: Deprecated spellings and their horizons. {#tbl:deprecations}
 | `--8<-- "file"` snippet, marker `-{2,}8<-{2,}` | `{include}(file)` | draft 3 | fmt |
 | `@https://doi.org/…` | `@doi:…` | draft 3 | indefinite (sugar) |
 | `[](gls:term)` | `@gls:term` | draft 2 | fmt |
-| `[](){#id}` anchor | `[]{#id}` | draft 3 | fmt |
+| `[](){#id}` anchor | `[]{#id}` | draft 3 | fmt (the `mkdocs` profile prints the deprecated spelling back: it is the only one `attr_list` makes an element of, hence the only one a site can point at) |
 | `[text][id]` reference-style link | `[text](#id)` | draft 3 | fmt (from `lint --fix`: the resolution decides) |
 | bare `mermaid` fence | `mermaid image` | draft 3 | indefinite (MkDocs renders it) |
 | `!!!` / `???` callouts | `::: type {…}` | draft 2 | indefinite (MkDocs Material renders them) |

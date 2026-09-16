@@ -348,3 +348,20 @@ fn a_reference_style_link_reads_a_text_that_carries_markup() {
     assert_eq!(reference("[a\n`b`][id]\n"), None);
     assert_eq!(reference("[a [b](u) c][id]\n"), None);
 }
+
+#[test]
+fn an_image_alt_carries_the_spans_of_its_slice() {
+    // Spec §Round-trip and source spans: a fragment the construct spells
+    // verbatim carries spans of that slice. The alt is the text between
+    // `![` and `]`, not the two bytes before it.
+    let md = "Text ![an alt](x.png) end.\n";
+    let parsed = parse(md, FileId::default());
+    let Block::Para(p) = &parsed.document.blocks[0] else {
+        panic!("{:?}", parsed.document.blocks)
+    };
+    let Some(Inline::Image(image)) = p.content.get(1) else {
+        panic!("{:?}", p.content)
+    };
+    let span = image.alt[0].meta().span;
+    assert_eq!(&md[span.start as usize..span.end as usize], "an alt");
+}

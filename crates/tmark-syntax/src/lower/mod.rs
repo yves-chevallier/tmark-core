@@ -412,8 +412,30 @@ impl Lowerer {
         }
     }
 
-    /// Parse and lower a fragment of text that has no source of its own
-    /// (an image alt, a YAML cell, a title): every span points at `anchor`.
+    /// A fragment the construct spells verbatim, lowered with the spans
+    /// of that slice — an image's alternative text is the text between
+    /// `![` and `]` — and anchored at the whole construct where it does
+    /// not (spec §Round-trip and source spans).
+    pub fn lower_fragment_in(
+        &mut self,
+        ctx: &Ctx,
+        position: Option<&Position>,
+        text: &str,
+        construct: Span,
+    ) -> Vec<Inline> {
+        let anchor = position
+            .filter(|_| !text.is_empty())
+            .and_then(|p| {
+                let at = p.start.offset + ctx.slice(Some(p)).find(text)?;
+                Some(self.span_of(ctx, at, at + text.len()))
+            })
+            .unwrap_or(construct);
+        self.lower_fragment(text, anchor)
+    }
+
+    /// Parse and lower a fragment of text, `anchor` being where it sits
+    /// in the file — the slice it is, or the construct it came from when
+    /// it is no slice of it (a YAML cell, a title, an image alt).
     pub fn lower_fragment(&mut self, text: &str, anchor: Span) -> Vec<Inline> {
         let Ok(tree) = self.tree(text) else {
             return vec![self.literal_text(anchor, text)];

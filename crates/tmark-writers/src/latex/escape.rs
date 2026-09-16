@@ -80,9 +80,15 @@ pub fn escape(text: &str) -> String {
 /// - `$` — math mode wherever the name is typeset back (a bookmark);
 /// - a blank — `\csname` keeps it, the `.aux` reader does not.
 ///
-/// Each becomes a `+` and a letter, and a `+` itself becomes `++`, so the
-/// mapping is injective: two ids never reach the same label name. `_`,
-/// `-`, `.`, `:`, `&` and letters outside ASCII go through untouched.
+/// Each becomes a `+` and a letter, and a `+` itself becomes `++`: a lone
+/// `+` in the result is therefore always an escape, so the mapping reads
+/// back and two ids never reach the same label name. `_`, `-`, `.`, `:`,
+/// `&` and letters outside ASCII go through untouched.
+///
+/// The one exception to the injectivity is whitespace: every whitespace
+/// character maps to `+s`. A destination can hold no line end and TeX
+/// reads a tab as a space anyway, so the only whitespace an id can
+/// actually carry is the space itself.
 pub fn label(name: &str) -> String {
     let mut out = String::with_capacity(name.len());
     for c in name.chars() {
@@ -238,6 +244,9 @@ mod tests {
         assert_eq!(label("c++"), "c++++");
         assert_ne!(label("a b"), label("a+sb"));
         assert_ne!(label("a^^41"), label("aA"));
+        // Whitespace apart: a tab and a space give the same name, which
+        // is what TeX makes of them too.
+        assert_eq!(label("a\tb"), label("a b"));
     }
 
     #[test]

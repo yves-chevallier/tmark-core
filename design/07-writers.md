@@ -404,8 +404,10 @@ and options, §2 the LaTeX catalogue, §4 Typst math), the contract names of
   ever declares. `escape::label` leaves every character as written but the
   nine that break the reading of a brace argument or of a `\csname`
   (`\ { } # % ~ ^ $` and a blank), each mapped to `+` and a letter with
-  `+` itself doubled, so the mapping is injective and two ids never
-  collide. `_`, `-`, `.`, `:` and `&` reach LaTeX untouched. The Typst
+  `+` itself doubled, so a lone `+` is always an escape, the mapping
+  reads back and two ids never collide — whitespace apart, every
+  character of which maps to `+s`, a space being the only one an id can
+  carry and TeX reading a tab as one anyway. `_`, `-`, `.`, `:` and `&` reach LaTeX untouched. The Typst
   side is unaffected: `<id>` and `#ref(<id>)` already take the id raw.
   The acronym key of `\tsacr` is a slug and needs nothing; the
   `\newacronym` that declares it is TeXSmith's (`ts-glossary`), which
