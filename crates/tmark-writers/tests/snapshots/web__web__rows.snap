@@ -114,14 +114,14 @@ $$
         Folded.
 
 <div class="admonition theorem" id="thm:pyth" markdown="1">
-<p class="admonition-title">Theorem 1 (Pythagoras)</p>
+<p class="admonition-title" markdown="span">Theorem 1 (Pythagoras)</p>
 
 In a right triangle, $a^2 + b^2 = c^2$.
 
 </div>
 
 <div class="admonition theorem" id="thm:nest" markdown="1">
-<p class="admonition-title">Theorem 2 (Nesting)</p>
+<p class="admonition-title" markdown="span">Theorem 2 (Nesting)</p>
 
 <div class="three-column-list" markdown>
 
@@ -130,7 +130,7 @@ In a right triangle, $a^2 + b^2 = c^2$.
 </div>
 
 <details class="tip" markdown="1">
-<summary class="admonition-title">Tip</summary>
+<summary class="admonition-title" markdown="span">Tip</summary>
 
 Folded, around
 
@@ -214,8 +214,15 @@ Footnote[^1] and *[HAL]: Hardware abstraction layer.
 Unknown container with [FW-03](#fw:ota).
 :::
 
+<details class="tip" id="tip:markup" markdown="1">
+<summary class="admonition-title" markdown="span">Tip 1 (A *folded* `title`)</summary>
+
+Markup in a `<summary>`.
+
+</details>
+
 <div class="admonition note" markdown="1">
-<p class="admonition-title"><span class="ts-counter" id="fw:titled" data-counter="fw" data-key="titled">FW-05</span> in the title</p>
+<p class="admonition-title" markdown="span"><span class="ts-counter" id="fw:titled" data-counter="fw" data-key="titled">FW-05</span> in the title</p>
 
 A `!!!` line cannot carry a `<span>`.
 

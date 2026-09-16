@@ -882,6 +882,13 @@ impl<'a> Lowerer<'a> {
     /// written or not: the marker form indents its body, and an indented
     /// HTML block inside a `markdown="1"` wrapper closes the wrapper
     /// instead of itself ([`Lowerer::html_parent`]).
+    ///
+    /// The title carries `markdown="span"`, as a caption and a table cell
+    /// do: `md_in_html` renders the inlines of the title and drops the
+    /// attribute, leaving Material's `<p class="admonition-title">` /
+    /// `<summary class="admonition-title">` intact. Without it a title
+    /// rendered only what was already HTML, and its `*emphasis*` or code
+    /// span reached the page as source.
     fn admonition(&mut self, f: &File, a: &Admonition) -> Option<String> {
         let title = a.title.as_ref().map(|t| self.inlines_text(f, t));
         let source = f.slice(a.meta.span);
@@ -962,7 +969,7 @@ impl<'a> Lowerer<'a> {
             (None, None) => word,
         };
         out.push_str(&format!(
-            "<{title_tag} class=\"admonition-title\">{heading}</{title_tag}>\n"
+            "<{title_tag} class=\"admonition-title\" markdown=\"span\">{heading}</{title_tag}>\n"
         ));
         let mut body = Out::scratch();
         self.nested(f, &a.content, &mut body, true);

@@ -67,6 +67,25 @@ follows is what it missed.
   returned too: the diagnostic message changes, nothing else, and the
   failure survives a `panic = "abort"` profile.
 
+- **A wrapped callout's title rendered no Markdown** (this note). The
+  `mkdocs` profile writes the title of a `<div class="admonition …"
+  markdown="1">` into a `<p class="admonition-title">` and of a
+  `<details … markdown="1">` into a `<summary class="admonition-title">`,
+  neither carrying a `markdown` attribute, so an `*emphasis*` or a code
+  span in the title reached the page as source — a counter rendered only
+  because the lowering had already written it as a `<span>`. Reproduced
+  against the extension set installed in TeXSmith's `.venv`
+  (Python-Markdown 3.10, `md_in_html`, `attr_list`, `admonition`,
+  `pymdownx.details`, `pymdownx.superfences`, then the site's full list
+  from `mkdocs.yml`): `markdown="span"` on either tag renders the
+  inlines, drops the attribute, keeps `class="admonition-title"` and the
+  element Material styles, and leaves raw HTML in the title alone;
+  `summary` is in `markdown.util.BLOCK_LEVEL_ELEMENTS`, so `md_in_html`
+  handles it. Both wrappers emit the attribute now. Fixture
+  `container-admonition-title` gained the collapsed case (the
+  `<summary>` half, which no fixture had), and `tests/web.rs` `ROWS` a
+  titled collapsed callout.
+
 Sentences corrected against the code: §Round-trip and source spans
 promised that a fragment with no source of its own carries *the span of
 the construct*, where the lowering anchors it at the construct and adds
@@ -109,6 +128,13 @@ moved.
   span covers `][id]` and its replacement is `](#id)`, not the whole
   node. Anything asserting the replacement text changes; anything
   applying fixes through `tmark.apply_fixes` does not.
+- **Every wrapped callout of a page moves.** The title of a
+  `<div class="admonition …">` / `<details>` wrapper now carries
+  `markdown="span"`, so an HTML-recorded artifact of a page holding a
+  numbered, labelled or otherwise wrapped callout re-records; the
+  rendered page gains the title's markup and nothing else. A `!!!` or
+  `???` source kept as written is untouched — Python-Markdown parses a
+  marker line's title as inline Markdown already.
 - **The `parse-internal` message changed** for the mismatch case, from
   the panic's "entered unreachable code: mismatched (non-jsx): …" to
   "Cannot close X: Y is open". Nothing keys on it here.
@@ -329,14 +355,11 @@ those anchors can be renamed back.
 
 ### Known and left
 
-- The `<p class="admonition-title">` the profile writes carries no
+- The `<p class="admonition-title">` the profile writes carried no
   `markdown` attribute, so Markdown *inside* a rewritten title (an
-  `*emphasis*`, not a counter, which is already HTML) does not render on
-  the site. `<figcaption markdown="span">` and `<th markdown="span">`
-  in the same file suggest the fix is one attribute, but it was not
-  verified against the installed extension set and would move every
-  callout of the corpus, so it was left. Check it against Material
-  before changing it.
+  `*emphasis*`, not a counter, which is already HTML) did not render on
+  the site. Verified and fixed in the review round above: the attribute
+  is `markdown="span"`, as on `<figcaption>` and `<th>`.
 - `Payload::locate` refuses a cell the payload spells twice, so two
   identical cells of a `yaml table` fall back to the fence span. The
   fallback is correct, not exact: a forward-scanning cursor would place

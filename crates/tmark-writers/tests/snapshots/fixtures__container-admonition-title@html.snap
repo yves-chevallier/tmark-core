@@ -6,6 +6,10 @@ expression: snapshot
 <p class="admonition-title"><span id="ex:un" class="counter">1</span> : <em>Feu</em></p>
 <p>Corps.</p>
 </div>
+<details id="tip:plie" class="admonition tip">
+<summary class="admonition-title"><em>Plié</em> et <code>code</code></summary>
+<p>Corps plié.</p>
+</details>
 
 ---requires---
 {

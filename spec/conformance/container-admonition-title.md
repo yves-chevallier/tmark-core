@@ -8,6 +8,10 @@ line. Before that they were anchored at the start of the block, so the
 line (challenge C66). A title the marker line cannot carry — a counter
 becomes a `<span …>`, and PyMdownX reads a title up to the next `"` —
 makes the profile write the `<div class="admonition …">` wrapper instead.
+The wrapper's title carries `markdown="span"`, so `md_in_html` renders the
+inlines of the title; without it the emphasis reached the page as source and
+only a counter, already HTML, showed. The collapsed callout takes the same
+wrapper through its id and puts its title in `<summary markdown="span">`.
 
 ## input
 
@@ -21,6 +25,10 @@ press:
 
 ::: note {title="#(ex:un) : *Feu*"}
 Corps.
+:::
+
+::: tip {#tip:plie title="*Plié* et `code`" collapsed=true}
+Corps plié.
 :::
 ```
 
@@ -36,6 +44,10 @@ press:
 
 ::: note {title="{counter}(ex:un) : *Feu*"}
 Corps.
+:::
+
+::: tip {#tip:plie title="*Plié* et `code`" collapsed=true}
+Corps plié.
 :::
 ```
 
@@ -93,6 +105,49 @@ Corps.
           ]
         }
       ]
+    },
+    {
+      "type": "Admonition",
+      "kind": "tip",
+      "title": [
+        {
+          "type": "Emph",
+          "content": [
+            {
+              "type": "Str",
+              "text": "Plié"
+            }
+          ]
+        },
+        {
+          "type": "Str",
+          "text": " et "
+        },
+        {
+          "type": "Code",
+          "text": "code"
+        }
+      ],
+      "content": [
+        {
+          "type": "Para",
+          "content": [
+            {
+              "type": "Str",
+              "text": "Corps plié."
+            }
+          ]
+        }
+      ],
+      "attrs": {
+        "id": "tip:plie",
+        "kv": [
+          [
+            "collapsed",
+            "true"
+          ]
+        ]
+      }
     }
   ]
 }

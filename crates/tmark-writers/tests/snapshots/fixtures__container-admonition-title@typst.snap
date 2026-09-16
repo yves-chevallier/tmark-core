@@ -6,6 +6,10 @@ expression: snapshot
 Corps.
 ]
 
+#ts-callout(kind: "tip", title: [_Plié_ et `code`], id: "tip:plie", collapsed: true)[
+Corps plié.
+]
+
 ---requires---
 {
   "packages": [

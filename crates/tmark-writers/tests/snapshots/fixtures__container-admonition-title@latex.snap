@@ -6,14 +6,20 @@ expression: snapshot
 Corps.
 \end{tscallout}
 
+\begin{tscallout}[kind=tip, title={\emph{Plié} et \tscodeinline{code}}, id=tip:plie, collapsed]
+Corps plié.
+\end{tscallout}
+
 ---requires---
 {
   "packages": [
+    "fvextra",
     "tcolorbox",
     "xcolor"
   ],
   "fragments": [
-    "ts-callouts"
+    "ts-callouts",
+    "ts-code"
   ],
   "shell_escape": false,
   "assets": [],

@@ -185,7 +185,13 @@ replacement text is:
   `table`, `thead`/`tbody` and `tr` carry `markdown="block"`, which
   settles web-profile open question 3), `<div class="ts-equation"
   markdown="1">` around display math, `<div class="admonition …"
-  markdown="1">` or `<details>` for a numbered or labelled callout,
+  markdown="1">` or `<details>` for a numbered or labelled callout, whose
+  title is a `<p class="admonition-title" markdown="span">` (a
+  `<summary …>` when collapsed) so that `md_in_html` renders the inlines
+  of the title and not only the counter the lowering already wrote as
+  HTML (verified against the installed extension set: the attribute is
+  consumed, the class and Material's element survive, and `summary` is
+  one of Python-Markdown's block-level elements),
   `<aside class="ts-aside" markdown="1">` for a block aside and `<span
   class="ts-aside">` for an inline one (an `<aside>` at the start of a
   paragraph would open an HTML block), `<span class="ts-counter" id=…

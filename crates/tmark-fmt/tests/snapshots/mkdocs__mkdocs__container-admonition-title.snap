@@ -11,3 +11,7 @@ press:
 
 !!! note "{counter}(ex:un) : *Feu*"
     Corps.
+
+::: tip {#tip:plie title="*Plié* et `code`" collapsed=true}
+Corps plié.
+:::

@@ -291,6 +291,10 @@ Footnote[^1] and *[HAL]: Hardware abstraction layer.
 Unknown container with @fw:ota.
 :::
 
+::: tip {#tip:markup title="A *folded* `title`" collapsed=true}
+Markup in a `<summary>`.
+:::
+
 !!! note "#(fw:titled) in the title"
     A `!!!` line cannot carry a `<span>`.
 
@@ -359,11 +363,11 @@ fn every_row_of_the_table() {
     // Callouts.
     has("!!! note \"As written\"\n    Body with [FW-01](#fw:watchdog) stays a `!!!` block.");
     has("!!! warning wide \"A title\"\n    Body with [FW-03](#fw:ota) and a nested callout.\n\n    ??? tip\n        Folded.");
-    has("<div class=\"admonition theorem\" id=\"thm:pyth\" markdown=\"1\">\n<p class=\"admonition-title\">Theorem 1 (Pythagoras)</p>\n\nIn a right triangle, $a^2 + b^2 = c^2$.\n\n</div>");
+    has("<div class=\"admonition theorem\" id=\"thm:pyth\" markdown=\"1\">\n<p class=\"admonition-title\" markdown=\"span\">Theorem 1 (Pythagoras)</p>\n\nIn a right triangle, $a^2 + b^2 = c^2$.\n\n</div>");
     // A callout inside an HTML wrapper is an HTML wrapper too, so the
     // `<div markdown>` its body holds is written at column zero:
     // indented, its `</div>` would close the wrapper (C68).
-    has("<div class=\"admonition theorem\" id=\"thm:nest\" markdown=\"1\">\n<p class=\"admonition-title\">Theorem 2 (Nesting)</p>\n\n<div class=\"three-column-list\" markdown>\n\n- one\n\n</div>\n\n<details class=\"tip\" markdown=\"1\">\n<summary class=\"admonition-title\">Tip</summary>\n\nFolded, around\n\n<div class=\"two-column-list\" markdown>\n\n1. un\n\n</div>\n\n</details>\n\n</div>");
+    has("<div class=\"admonition theorem\" id=\"thm:nest\" markdown=\"1\">\n<p class=\"admonition-title\" markdown=\"span\">Theorem 2 (Nesting)</p>\n\n<div class=\"three-column-list\" markdown>\n\n- one\n\n</div>\n\n<details class=\"tip\" markdown=\"1\">\n<summary class=\"admonition-title\" markdown=\"span\">Tip</summary>\n\nFolded, around\n\n<div class=\"two-column-list\" markdown>\n\n1. un\n\n</div>\n\n</details>\n\n</div>");
     // Asides, index, inline sugar, spans, raw, media.
     has("<aside class=\"ts-aside\" data-side=\"left\" markdown=\"1\">\n\nA margin *note* with [FW-03](#fw:ota).\n\n</aside>");
     has("<div id=\"layout\" class=\"two-column-list\" markdown=\"1\">\n\n- one\n- two\n\n</div>");
@@ -395,10 +399,14 @@ fn every_row_of_the_table() {
     has("Term\n:   A definition with [FW-03](#fw:ota).");
     has("Footnote[^1] and *[HAL]: Hardware abstraction layer.\n\n[^1]: A note with [FW-03](#fw:ota).");
     has("::: gadget {x=1}\nUnknown container with [FW-03](#fw:ota).\n:::");
+    // The title of a wrapper is `markdown="span"`, so `md_in_html`
+    // renders its inlines; the marker forms above need no attribute,
+    // Python-Markdown parsing their title as inline Markdown already.
+    has("<details class=\"tip\" id=\"tip:markup\" markdown=\"1\">\n<summary class=\"admonition-title\" markdown=\"span\">Tip 1 (A *folded* `title`)</summary>\n\nMarkup in a `<summary>`.\n\n</details>");
     // A `!!!` source stays as written — unless its title lowers to
     // something the marker line cannot carry (C66): PyMdownX reads the
     // title up to the next `"`, so the wrapper takes over.
-    has("<div class=\"admonition note\" markdown=\"1\">\n<p class=\"admonition-title\"><span class=\"ts-counter\" id=\"fw:titled\" data-counter=\"fw\" data-key=\"titled\">FW-05</span> in the title</p>\n\nA `!!!` line cannot carry a `<span>`.\n\n</div>\n\n---\n");
+    has("<div class=\"admonition note\" markdown=\"1\">\n<p class=\"admonition-title\" markdown=\"span\"><span class=\"ts-counter\" id=\"fw:titled\" data-counter=\"fw\" data-key=\"titled\">FW-05</span> in the title</p>\n\nA `!!!` line cannot carry a `<span>`.\n\n</div>\n\n---\n");
     // The one diagnostic the lowering itself finds: the fence whose
     // `include=` names a file the loader does not serve.
     let codes: Vec<_> = lowered
