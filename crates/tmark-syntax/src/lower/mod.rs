@@ -236,6 +236,28 @@ impl Lowerer {
         Some(position.start.offset + first.find('{')? + 1)
     }
 
+    /// The span of the value of `key` in the attribute list on the first
+    /// line of `position`, `len` being the length of the decoded value.
+    /// `None` when the list has no such key, or when the value is not a
+    /// verbatim slice of the line: what is parsed out of it has then no
+    /// source of its own (spec §Round-trip and source spans).
+    pub fn attr_value_span(
+        &self,
+        ctx: &Ctx,
+        position: Option<&Position>,
+        key: &str,
+        len: usize,
+    ) -> Option<Span> {
+        let base = self.attrs_base(ctx, position)?;
+        let local = position?.start.offset;
+        let first = ctx.slice(position).lines().next()?;
+        let close = first.rfind('}')?;
+        let body = first.get(base - local..close)?;
+        let at = base + head::attr_value_offset(body, key)?;
+        ctx.text.get(at..at + len)?;
+        Some(self.span_of(ctx, at, at + len))
+    }
+
     /// Same on the last line of `position` (display math: the list follows
     /// the closing `$$`).
     pub fn attrs_base_last_line(&self, ctx: &Ctx, position: Option<&Position>) -> Option<usize> {

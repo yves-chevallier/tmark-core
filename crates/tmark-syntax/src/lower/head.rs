@@ -422,19 +422,54 @@ pub fn parse_container_info(info: &str) -> (String, Option<Attrs>, bool) {
     (name.to_string(), attrs, valid)
 }
 
-/// Splits `type class… "Title"` of a PyMdownX admonition.
-pub fn parse_admonition_info(info: &str) -> (String, Vec<String>, Option<String>) {
-    let info = info.trim();
-    let (head, title) = match info.find('"') {
-        Some(at) => (
-            info[..at].trim(),
-            Some(info[at..].trim().trim_matches('"').to_string()),
-        ),
-        None => (info, None),
+/// Splits `type class… "Title"` of a PyMdownX admonition. The title comes
+/// with its byte offset in `info`: it is a verbatim slice of the marker
+/// line, so what is parsed from it carries spans of the file (spec
+/// §Round-trip and source spans).
+pub fn parse_admonition_info(info: &str) -> (String, Vec<String>, Option<(String, usize)>) {
+    let trimmed = info.trim();
+    let (head, title) = match trimmed.find('"') {
+        Some(at) => {
+            let inner = trimmed[at..].trim().trim_matches('"');
+            (
+                trimmed[..at].trim(),
+                Some((inner.to_string(), offset_in(info, inner) as usize)),
+            )
+        }
+        None => (trimmed, None),
     };
     let mut words = head.split_whitespace().map(str::to_string);
     let kind = words.next().unwrap_or_default();
     (kind, words.collect(), title)
+}
+
+/// Byte offset, inside the text of an attribute list, of the value of
+/// `key` — of the value itself, quotes off. `None` when the list has no
+/// such key or when its value is not a verbatim slice of the text (a
+/// quoted value with a `\"` or a `\\` in it, which `unquote` decodes):
+/// only a verbatim value can carry spans of the file.
+pub fn attr_value_offset(s: &str, key: &str) -> Option<usize> {
+    let body = match s.trim_start().strip_prefix(':') {
+        Some(rest) => rest,
+        None => s,
+    };
+    for token in tokens(body) {
+        let Some((name, value)) = token.split_once('=') else {
+            continue;
+        };
+        if name != key || value.is_empty() {
+            continue;
+        }
+        let inner = match value.len() >= 2 && value.starts_with('"') && value.ends_with('"') {
+            true => &value[1..value.len() - 1],
+            false => value,
+        };
+        if inner.contains('\\') {
+            return None;
+        }
+        return Some(offset_in(s, inner) as usize);
+    }
+    None
 }
 
 #[cfg(test)]
@@ -632,6 +667,28 @@ mod tests {
         let (kind, classes, title) = parse_admonition_info("note inline end \"Folded\"");
         assert_eq!(kind, "note");
         assert_eq!(classes, vec!["inline", "end"]);
-        assert_eq!(title.as_deref(), Some("Folded"));
+        assert_eq!(title, Some(("Folded".to_string(), 17)));
+        // The offset is the one of the title in the info as given, blanks
+        // and all: a span of the marker line, not of the trimmed info.
+        let info = "  exercise \"#(ex:un) : T\"  ";
+        let (_, _, title) = parse_admonition_info(info);
+        let (text, at) = title.unwrap();
+        assert_eq!(&info[at..at + text.len()], "#(ex:un) : T");
+    }
+
+    #[test]
+    fn attribute_values_are_located() {
+        let s = "#a .b title=\"#(ex:un) : T\" lang=en";
+        let at = attr_value_offset(s, "title").unwrap();
+        assert_eq!(&s[at..at + "#(ex:un) : T".len()], "#(ex:un) : T");
+        let at = attr_value_offset(s, "lang").unwrap();
+        assert_eq!(&s[at..], "en");
+        assert_eq!(attr_value_offset(s, "kind"), None);
+        // `unquote` decodes the escapes, so the value is not a slice.
+        assert_eq!(attr_value_offset(r#"title="a \"b\"""#, "title"), None);
+        // The deprecated leading colon does not move the value.
+        let s = ": title=\"T\"";
+        let at = attr_value_offset(s, "title").unwrap();
+        assert_eq!(&s[at..at + 1], "T");
     }
 }

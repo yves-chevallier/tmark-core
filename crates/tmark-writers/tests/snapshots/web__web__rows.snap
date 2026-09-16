@@ -157,7 +157,7 @@ and web only.
 
 ## Included {#sec:extra}
 
-Included <span class="ts-counter" id="fw:extra" data-counter="fw" data-key="extra">FW-05</span>, see [FW-01](#fw:watchdog) and [Included](#sec:extra).
+Included <span class="ts-counter" id="fw:extra" data-counter="fw" data-key="extra">FW-06</span>, see [FW-01](#fw:watchdog) and [Included](#sec:extra).
 
 --8<-- "snippets/x.md"
 
@@ -189,6 +189,13 @@ Footnote[^1] and *[HAL]: Hardware abstraction layer.
 ::: gadget {x=1}
 Unknown container with [FW-03](#fw:ota).
 :::
+
+<div class="admonition note" markdown="1">
+<p class="admonition-title"><span class="ts-counter" id="fw:titled" data-counter="fw" data-key="titled">FW-05</span> in the title</p>
+
+A `!!!` line cannot carry a `<span>`.
+
+</div>
 
 ---
 

@@ -344,7 +344,13 @@ impl Lowerer {
                         (!a.marker.ends_with('+')).to_string(),
                     ));
                 }
-                let title = title.map(|t| self.lower_fragment(&t, span));
+                let info_at = admonition_info_at(ctx, a.position.as_ref(), &a.marker, &a.info);
+                let title = title.map(|(t, at)| {
+                    let anchor = info_at
+                        .map(|base| self.span_of(ctx, base + at, base + at + t.len()))
+                        .unwrap_or(span);
+                    self.lower_fragment(&t, anchor)
+                });
                 let content = self.lower_content(&a.value, &a.stops, ctx, document);
                 out.push(Item::Block(Block::Admonition(Admonition {
                     meta,
@@ -807,7 +813,12 @@ impl Lowerer {
                     .iter()
                     .position(|(k, _)| k == "title")
                     .map(|at| attrs.kv.remove(at).1)
-                    .map(|t| self.lower_fragment(&t, span));
+                    .map(|t| {
+                        let anchor = self
+                            .attr_value_span(ctx, c.position.as_ref(), "title", t.len())
+                            .unwrap_or(span);
+                        self.lower_fragment(&t, anchor)
+                    });
                 Block::Admonition(Admonition {
                     meta,
                     kind: kind.to_string(),
@@ -1254,6 +1265,26 @@ impl Lowerer {
             position: CaptionPosition::After,
         })
     }
+}
+
+/// Local offset, in `ctx`'s text, of the info string of a `!!!` line: the
+/// marker, then the blanks after it. The tokenizer keeps the info as a
+/// verbatim slice of that line (only its trailing blanks are dropped), so
+/// a title parsed out of it can be given spans of the file rather than
+/// spans of the title alone (spec §Round-trip and source spans).
+fn admonition_info_at(
+    ctx: &Ctx,
+    position: Option<&tmark_markdown::unist::Position>,
+    marker: &str,
+    info: &str,
+) -> Option<usize> {
+    if info.is_empty() {
+        return None;
+    }
+    let start = position?.start.offset;
+    let line = ctx.slice(position).lines().next()?;
+    let rest = line.get(marker.len()..)?;
+    Some(start + marker.len() + rest.find(info)?)
 }
 
 /// `Kind:` at the start of a paragraph: the kind and the bytes to skip.

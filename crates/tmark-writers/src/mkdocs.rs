@@ -845,10 +845,16 @@ impl<'a> Lowerer<'a> {
     /// `::: type` → `!!! type "T"` (`???`, `???+` when collapsed); a
     /// numbered kind, an id or anything the `!!!` line cannot carry →
     /// `<div class="admonition …" markdown="1">` (`<details>` when
-    /// collapsed). A `!!!` source stays as written.
+    /// collapsed). A `!!!` source stays as written, unless its title
+    /// lowers to something the marker line cannot carry: PyMdownX reads
+    /// the title up to the next `"`, so a counter or a reference that
+    /// becomes a `<span …>` there needs the wrapper too.
     fn admonition(&mut self, f: &File, a: &Admonition) -> Option<String> {
+        let title = a.title.as_ref().map(|t| self.inlines_text(f, t));
         let source = f.slice(a.meta.span);
-        if source.starts_with("!!!") || source.starts_with("???") {
+        if (source.starts_with("!!!") || source.starts_with("???"))
+            && title.as_deref().map_or(true, |t| !t.contains(['"', '\n']))
+        {
             return None;
         }
         let collapsed = a.attrs.get("collapsed");
@@ -858,7 +864,6 @@ impl<'a> Lowerer<'a> {
             Some("false") => Some("???+"),
             Some(_) => None,
         };
-        let title = a.title.as_ref().map(|t| self.inlines_text(f, t));
         let counter = self.kind_counter(&a.kind);
         let numbered = a.attrs.id.is_some() || counter.is_some();
         let plain = !numbered

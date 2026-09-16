@@ -126,7 +126,7 @@ const BIB: &str = "@article{ein05,
 ";
 
 /// One construct per row of the per-construct table of web-profile.md.
-const ROWS: &str = r#"---
+const ROWS: &str = r##"---
 title: Firmware review
 lang: en
 press:
@@ -274,8 +274,11 @@ Footnote[^1] and *[HAL]: Hardware abstraction layer.
 Unknown container with @fw:ota.
 :::
 
+!!! note "#(fw:titled) in the title"
+    A `!!!` line cannot carry a `<span>`.
+
 ---
-"#;
+"##;
 
 fn rows_loader() -> MemoryLoader {
     MemoryLoader::new()
@@ -356,7 +359,7 @@ fn every_row_of_the_table() {
     has("<hr class=\"raw\" />");
     assert!(!text.contains("p.png"));
     // Includes: lowered with their own labels; snippets untouched.
-    has("## Included {#sec:extra}\n\nIncluded <span class=\"ts-counter\" id=\"fw:extra\" data-counter=\"fw\" data-key=\"extra\">FW-05</span>, see [FW-01](#fw:watchdog) and [Included](#sec:extra).");
+    has("## Included {#sec:extra}\n\nIncluded <span class=\"ts-counter\" id=\"fw:extra\" data-counter=\"fw\" data-key=\"extra\">FW-06</span>, see [FW-01](#fw:watchdog) and [Included](#sec:extra).");
     has("--8<-- \"snippets/x.md\"");
     // Verbatim rows.
     has("```mermaid\ngraph TD; A-->B;\n```");
@@ -364,7 +367,11 @@ fn every_row_of_the_table() {
     has("> A quote with <span class=\"ts-counter\" id=\"fw:quoted\" data-counter=\"fw\" data-key=\"quoted\">FW-04</span> and [FW-04](#fw:quoted).");
     has("Term\n:   A definition with [FW-03](#fw:ota).");
     has("Footnote[^1] and *[HAL]: Hardware abstraction layer.\n\n[^1]: A note with [FW-03](#fw:ota).");
-    has("::: gadget {x=1}\nUnknown container with [FW-03](#fw:ota).\n:::\n\n---\n");
+    has("::: gadget {x=1}\nUnknown container with [FW-03](#fw:ota).\n:::");
+    // A `!!!` source stays as written — unless its title lowers to
+    // something the marker line cannot carry (C66): PyMdownX reads the
+    // title up to the next `"`, so the wrapper takes over.
+    has("<div class=\"admonition note\" markdown=\"1\">\n<p class=\"admonition-title\"><span class=\"ts-counter\" id=\"fw:titled\" data-counter=\"fw\" data-key=\"titled\">FW-05</span> in the title</p>\n\nA `!!!` line cannot carry a `<span>`.\n\n</div>\n\n---\n");
     // The one diagnostic the lowering itself finds: the fence whose
     // `include=` names a file the loader does not serve.
     let codes: Vec<_> = lowered

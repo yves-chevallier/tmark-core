@@ -1,0 +1,17 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+---
+press:
+  declare:
+    counters:
+      ex: {name: Exercice, format: "{n}"}
+---
+
+<div class="admonition note" markdown="1">
+<p class="admonition-title"><span class="ts-counter" id="ex:un" data-counter="ex" data-key="un">1</span> : *Feu*</p>
+
+Corps.
+
+</div>

@@ -143,6 +143,17 @@ Every node carries a source span
     attributes), what an editor needs for outline, hover and go-to-target,
     and what SyncTeX-style navigation from PDF to source is built on.
 
+    Some inline content is parsed out of a string the tokenizer hands over
+    whole: the title of an admonition (`!!! note "…"`, `{title="…"}`), an
+    image's alternative text, a cell of a `yaml table`. Where that string
+    is a verbatim slice of the file, its nodes carry spans of that slice,
+    like any other node. Where it is not — a quoted value with an escape in
+    it, a YAML scalar the payload folds or spells twice — it has no source
+    of its own, and every node parsed from it carries the span of the
+    *construct* it came from: the whole marker line, the whole fence. A
+    tool reading the file at those spans then finds the construct, not the
+    node, and prints the node rather than splicing it.
+
 Edits are local
 :   A tool that changes one node (rename a label, rewrite a citation, add
     an attribute) prints that node and splices it into its span. Every
