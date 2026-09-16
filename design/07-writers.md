@@ -377,6 +377,20 @@ and options, §2 the LaTeX catalogue, §4 Typst math), the contract names of
   (parity normalisation collapses blank runs anyway).
 - `\ref` and `\hyperref` use the label *as defined* (`Labels::get(key).id`),
   because TMark matches keys case-insensitively and LaTeX does not.
+- A label **name** is not prose. `\label`, `\ref`, `\pageref`,
+  `\hyperref[…]`, `\cref`, `\gls` and the `id=` key of `tscode` and
+  `tscallout` take a name LaTeX writes into the `.aux` and looks up
+  through `\csname`, so it goes through `escape::label`, never
+  `escape::escape` — which wrote `\hyperref[a\_b]`, an anchor no `\label`
+  ever declares. `escape::label` leaves every character as written but the
+  nine that break the reading of a brace argument or of a `\csname`
+  (`\ { } # % ~ ^ $` and a blank), each mapped to `+` and a letter with
+  `+` itself doubled, so the mapping is injective and two ids never
+  collide. `_`, `-`, `.`, `:` and `&` reach LaTeX untouched. The Typst
+  side is unaffected: `<id>` and `#ref(<id>)` already take the id raw.
+  The acronym key of `\tsacr` is a slug and needs nothing; the
+  `\newacronym` that declares it is TeXSmith's (`ts-glossary`), which
+  must apply the same rule to a key of its own that is not csname-safe.
 - A backend-numbered reference renders the `ref` template with
   `{number}` → `\ref{key}` and a `~` between name and number
   (`Figure~\ref{fig:x}`); a TMark-numbered one renders the text inside

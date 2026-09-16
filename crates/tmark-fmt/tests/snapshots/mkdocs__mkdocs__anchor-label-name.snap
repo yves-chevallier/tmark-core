@@ -1,0 +1,26 @@
+---
+source: crates/tmark-fmt/tests/mkdocs.rs
+expression: mkdocs(&canonical)
+---
+## One {#sec:a_b}
+
+## Two {#sec:a-b}
+
+## Three {#sec:a.b}
+
+## Four {#sec:a:b}
+
+See @sec:a_b, @sec:a-b, @sec:a.b, @sec:a:b and [the first](#sec:a_b).
+
+$$
+E = mc^2
+$$ {#eq:m_c}
+
+```py
+print("hi")
+```
+
+/// caption
+    attrs: {id: lst:h_i}
+Hello.
+///

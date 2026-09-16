@@ -1,0 +1,28 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+## One {#sec:a_b}
+
+## Two {#sec:a-b}
+
+## Three {#sec:a.b}
+
+## Four {#sec:a:b}
+
+See [One](#sec:a_b), [Two](#sec:a-b), [Three](#sec:a.b), [Four](#sec:a:b) and [the first](#sec:a_b).
+
+<div id="eq:m_c" class="ts-equation" markdown="1">
+$$
+E = mc^2
+$$
+</div>
+
+<figure markdown="1" class="ts-listing" id="lst:h_i">
+
+```py
+print("hi")
+```
+
+<figcaption markdown="span"><span class="ts-caption-label">Listing 1:</span> Hello.</figcaption>
+</figure>

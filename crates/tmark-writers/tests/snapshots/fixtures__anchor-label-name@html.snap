@@ -1,0 +1,28 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+<h2 id="sec:a_b">One</h2>
+<h2 id="sec:a-b">Two</h2>
+<h2 id="sec:a.b">Three</h2>
+<h2 id="sec:a:b">Four</h2>
+<p>See <a href="#sec:a_b" class="reference">Section 1</a>, <a href="#sec:a-b" class="reference">Section 2</a>, <a href="#sec:a.b" class="reference">Section 3</a>, <a href="#sec:a:b" class="reference">Section 4</a> and <a href="#sec:a_b" class="reference">the first</a>.</p>
+<div id="eq:m_c" class="math display">\[E = mc^2\]</div>
+<figure id="lst:h_i" class="listing">
+<pre><code class="language-py">print(&quot;hi&quot;)
+</code></pre>
+<figcaption><span class="caption-label">Listing 1</span> Hello.</figcaption>
+</figure>
+
+---requires---
+{
+  "packages": [],
+  "fragments": [],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

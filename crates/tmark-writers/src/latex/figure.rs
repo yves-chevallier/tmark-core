@@ -173,14 +173,14 @@ impl Latex<'_> {
                 self.out.push(&format!("{{{caption}}}"));
                 for label in labels {
                     self.out
-                        .push(&format!("\\label{{{}}}", escape::escape(label)));
+                        .push(&format!("\\label{{{}}}", escape::label(label)));
                 }
                 self.out.push("\n");
             }
             None => {
                 for label in labels {
                     self.out
-                        .push(&format!("\\label{{{}}}\n", escape::escape(label)));
+                        .push(&format!("\\label{{{}}}\n", escape::label(label)));
                 }
             }
         }
@@ -289,7 +289,7 @@ impl Latex<'_> {
             let alt = self.render_inlines(&image.alt);
             self.out.push(&format!("\\caption{{{alt}}}"));
             if let Some(id) = image.attrs.id() {
-                self.out.push(&format!("\\label{{{}}}", escape::escape(id)));
+                self.out.push(&format!("\\label{{{}}}", escape::label(id)));
             }
             self.out.push("\n");
             self.out.push("\\end{subfigure}\n");

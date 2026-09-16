@@ -115,7 +115,7 @@ impl Latex<'_> {
                 self.out.begin(n.meta.id);
                 self.out.push(&format!(
                     "\\leavevmode\\phantomsection\\label{{{}}}{}",
-                    escape::escape(&id),
+                    escape::label(&id),
                     escape::prose(&number)
                 ));
                 self.out.end(n.meta.id);
@@ -252,7 +252,7 @@ impl Latex<'_> {
     /// A link to an anchor of the document: `\ref` when it carries no
     /// text of its own, else `\hyperref` through the textual template.
     fn anchor(&mut self, n: &Link, key: &str) {
-        let id = escape::escape(key);
+        let id = escape::label(key);
         if n.content.is_empty() {
             self.out.push(&format!("\\ref{{{id}}}"));
             return;
@@ -360,7 +360,7 @@ impl Latex<'_> {
                         .get(&item.key)
                         .map(|l| l.id.clone())
                         .unwrap_or_else(|| item.key.clone());
-                    let key = escape::escape(&defined);
+                    let key = escape::label(&defined);
                     // An anchor with no number shows its text (spec
                     // §Anchor, `ref-unnumbered`): a `\\ref` would print the
                     // enclosing section's number.
@@ -403,7 +403,7 @@ impl Latex<'_> {
                     self.req.fragment("ts-glossary");
                     self.req.package("glossaries");
                     self.out
-                        .push(&format!("\\tsgls{{{}}}", escape::escape(&term)));
+                        .push(&format!("\\tsgls{{{}}}", escape::label(&term)));
                 }
                 Resolution::Doi { doi } => {
                     self.out.push(&format!(
@@ -592,10 +592,8 @@ impl Latex<'_> {
             return;
         }
         if let Some(id) = n.attrs.id() {
-            self.out.push(&format!(
-                "\\phantomsection\\label{{{}}}",
-                escape::escape(id)
-            ));
+            self.out
+                .push(&format!("\\phantomsection\\label{{{}}}", escape::label(id)));
         }
         if let Some(slug) = n.attrs.get("script") {
             self.req.fragment("ts-fonts");

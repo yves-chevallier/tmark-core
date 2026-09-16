@@ -1,0 +1,39 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+\subsection{One}\label{sec:a_b}
+
+\subsection{Two}\label{sec:a-b}
+
+\subsection{Three}\label{sec:a.b}
+
+\subsection{Four}\label{sec:a:b}
+
+See Section~\ref{sec:a_b}, Section~\ref{sec:a-b}, Section~\ref{sec:a.b}, Section~\ref{sec:a:b} and \hyperref[sec:a_b]{the first}.
+
+\begin{equation}\label{eq:m_c}
+E = mc^2
+\end{equation}
+
+\begin{tscode}[lang=py, id=lst:h_i, caption={Hello.}]
+print("hi")
+\end{tscode}
+
+---requires---
+{
+  "packages": [
+    "fvextra",
+    "tcolorbox"
+  ],
+  "fragments": [
+    "ts-code"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

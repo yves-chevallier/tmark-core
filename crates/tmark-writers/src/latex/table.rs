@@ -319,7 +319,7 @@ impl Latex<'_> {
                 self.out.push(&format!("\\caption{{{caption}}}\n"));
                 if let Some(label) = label {
                     self.out
-                        .push(&format!("\\label{{{}}}\n", escape::escape(label)));
+                        .push(&format!("\\label{{{}}}\n", escape::label(label)));
                 }
                 if let Some(node) = node {
                     self.out.end(node.meta.id);
@@ -330,7 +330,7 @@ impl Latex<'_> {
                 self.out.push("\\begin{center}\n");
                 if let Some(label) = label {
                     self.out
-                        .push(&format!("\\label{{{}}}\n", escape::escape(label)));
+                        .push(&format!("\\label{{{}}}\n", escape::label(label)));
                 }
             }
         }
@@ -442,7 +442,7 @@ impl Latex<'_> {
                     self.out.push(&format!("\\caption{{{caption}}}"));
                     if let Some(label) = label {
                         self.out
-                            .push(&format!("\\label{{{}}}", escape::escape(label)));
+                            .push(&format!("\\label{{{}}}", escape::label(label)));
                     }
                     if let Some(node) = node {
                         self.out.end(node.meta.id);

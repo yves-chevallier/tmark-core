@@ -1,0 +1,41 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+== One <sec:a_b>
+
+== Two <sec:a-b>
+
+== Three <sec:a.b>
+
+== Four <sec:a:b>
+
+See #ref(<sec:a_b>, supplement: [Section]), #ref(<sec:a-b>, supplement: [Section]), #ref(<sec:a.b>, supplement: [Section]), #ref(<sec:a:b>, supplement: [Section]) and #link(<sec:a_b>)[the first].
+
+#mitex(`E = mc^2`) <eq:m_c>
+
+#ts-code(caption: [Hello.])[
+```py
+print("hi")
+```
+] <lst:h_i>
+
+---requires---
+{
+  "packages": [
+    "@preview/mitex:0.2.7",
+    "fvextra",
+    "tcolorbox"
+  ],
+  "fragments": [
+    "ts-code",
+    "ts-equations"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

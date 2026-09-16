@@ -2,7 +2,7 @@
 source: crates/tmark-writers/tests/fixtures.rs
 expression: snapshot
 ---
-\href{b\%20c}{a} \href{e)f}{d} \hyperref[h i]{g} \includegraphics[width=1em]{k l.png} \href{n(o)p}{m}
+\href{b\%20c}{a} \href{e)f}{d} \hyperref[h+si]{g} \includegraphics[width=1em]{k l.png} \href{n(o)p}{m}
 
 ---requires---
 {

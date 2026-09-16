@@ -62,6 +62,47 @@ pub fn escape(text: &str) -> String {
     out
 }
 
+/// A label *name*: what `\label`, `\ref`, `\pageref`, `\hyperref[…]`,
+/// `\cref` and `\gls` take, and what the `id=` key of a `tscode` or a
+/// `tscallout` carries (`fragment-contracts.md` §3 rule 6). It is not
+/// prose: LaTeX writes the name into the `.aux` and looks it up through
+/// `\csname`, so escaping it as text is wrong — `\hyperref[a\_b]` points
+/// at no anchor, while `\label{a_b}` is exactly the anchor `a_b`. Every
+/// character stays as written but the ones that break the *reading* of a
+/// brace argument or of a `\csname`:
+///
+/// - `\`, `{` and `}` — a control sequence, an unbalanced group;
+/// - `#` — a parameter character, an error in an argument;
+/// - `%` — a comment, which eats the rest of the line of the `.aux`;
+/// - `~` — active, so `\csname` sees `\nobreakspace` and stops;
+/// - `^` — `^^` and two hex digits is one character at input time, so two
+///   names would collapse into one;
+/// - `$` — math mode wherever the name is typeset back (a bookmark);
+/// - a blank — `\csname` keeps it, the `.aux` reader does not.
+///
+/// Each becomes a `+` and a letter, and a `+` itself becomes `++`, so the
+/// mapping is injective: two ids never reach the same label name. `_`,
+/// `-`, `.`, `:`, `&` and letters outside ASCII go through untouched.
+pub fn label(name: &str) -> String {
+    let mut out = String::with_capacity(name.len());
+    for c in name.chars() {
+        match c {
+            '+' => out.push_str("++"),
+            '\\' => out.push_str("+b"),
+            '{' => out.push_str("+o"),
+            '}' => out.push_str("+c"),
+            '#' => out.push_str("+h"),
+            '%' => out.push_str("+p"),
+            '~' => out.push_str("+t"),
+            '^' => out.push_str("+x"),
+            '$' => out.push_str("+m"),
+            c if c.is_whitespace() => out.push_str("+s"),
+            c => out.push(c),
+        }
+    }
+    out
+}
+
 /// `prepare_plain_text`: what a `Str` in prose becomes.
 pub fn prose(text: &str) -> String {
     let mut normalised = String::with_capacity(text.len());
@@ -179,6 +220,24 @@ mod tests {
             "\\& \\% \\# \\$ \\_ \\^{} \\{ \\} \\textasciitilde{} \\textbackslash{}"
         );
         assert_eq!(escape("café — 100%"), "café — 100\\%");
+    }
+
+    #[test]
+    fn label_names_are_not_prose() {
+        // The characters of an id as the author writes it: none moves.
+        assert_eq!(label("sec:a_b"), "sec:a_b");
+        assert_eq!(label("a-b"), "a-b");
+        assert_eq!(label("a.b"), "a.b");
+        assert_eq!(label("k&r"), "k&r");
+        assert_eq!(label("café"), "café");
+        // What breaks the reading of the argument, and only that.
+        assert_eq!(label("a\\b{c}d"), "a+bb+oc+cd");
+        assert_eq!(label("a#b%c~d^e$f g"), "a+hb+pc+td+xe+mf+sg");
+        // Injective: the escape character is doubled, so no two names
+        // collapse into one.
+        assert_eq!(label("c++"), "c++++");
+        assert_ne!(label("a b"), label("a+sb"));
+        assert_ne!(label("a^^41"), label("aA"));
     }
 
     #[test]

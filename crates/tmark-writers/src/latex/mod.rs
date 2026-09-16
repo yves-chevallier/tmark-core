@@ -258,7 +258,7 @@ impl Latex<'_> {
         }
         if let Some(label) = label {
             self.out
-                .push(&format!("\\label{{{}}}", escape::escape(&label)));
+                .push(&format!("\\label{{{}}}", escape::label(&label)));
         }
         if level >= 4 && command.is_some() {
             self.out.push("\\mbox{}\\\\");
@@ -332,7 +332,7 @@ impl Latex<'_> {
             }
         }
         if let Some(id) = options.id().or(caption.and_then(|c| c.attrs.id())) {
-            keys.push(format!("id={}", escape::escape(id)));
+            keys.push(format!("id={}", escape::label(id)));
         }
         if let Some(stretch) = options.get("stretch") {
             keys.push(format!("stretch={stretch}"));
@@ -521,7 +521,7 @@ impl Latex<'_> {
         self.out.push(&format!("{word}: "));
         self.inlines(&c.content);
         if let Some(id) = c.attrs.id() {
-            self.out.push(&format!("\\label{{{}}}", escape::escape(id)));
+            self.out.push(&format!("\\label{{{}}}", escape::label(id)));
         }
         self.out.ensure_newline();
     }
@@ -594,7 +594,7 @@ impl Latex<'_> {
         let label = m
             .attrs
             .id()
-            .map(|id| format!("\\label{{{}}}", escape::escape(id)));
+            .map(|id| format!("\\label{{{}}}", escape::label(id)));
         if let Some(env) = block_environment(body) {
             let _ = env;
             match &label {
@@ -703,7 +703,7 @@ impl Latex<'_> {
 fn attr_keys(attrs: &Attrs, bare: &[&str]) -> Vec<String> {
     let mut keys = Vec::new();
     if let Some(id) = attrs.id() {
-        keys.push(format!("id={}", escape::escape(id)));
+        keys.push(format!("id={}", escape::label(id)));
     }
     if !attrs.classes.is_empty() {
         keys.push(format!("class={{{}}}", attrs.classes.join(",")));
