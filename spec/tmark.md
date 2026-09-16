@@ -550,6 +550,23 @@ and writes bare `key=value` pairs otherwise:
 ^(?<lang>[\w+-]+)(?:\s+(?<node>code|table|table-config|image|raw))?(?<options>(?:\s+[\w-]+=(?:"(?:[^"\\]|\\.)*"|[^\s}]+))*)(?:\s+(?&attrs))?\s*$
 ```
 
+`pymdownx.superfences` also spells the whole info string as one
+`attr_list` group, with no bare word before it — `{ .c .annotate }`, the
+form MkDocs Material documents for code annotations, and `{.c
+.annotate}` without the inner spaces. It is accepted (class E, Appendix
+@[app:pymdownx]) and means exactly what the first grammar does: the
+**first class is the language**, the rest of the list is the fence's
+options, and there is no node word. A processor never reports a language
+of `{`:
+
+```text
+^(?&attrs)\s*$
+```
+
+The canonical spelling is the first grammar, so the braces-only form is
+deprecated (Appendix @[app:deprecations]) and `fmt` rewrites `{ .c
+.annotate }` to `c {.annotate}`, which Material renders identically.
+
 Bare reference or citation (`@` refers). The look-behind is the X4 guard:
 no `@` inside a word, an e-mail address or a URL; the key is an `id` that
 starts with a letter and ends on a letter or a digit
@@ -2297,6 +2314,7 @@ Table: PyMdownX sugar accepted under the compatibility profile. {#tbl:compat}
 | `=== "Title"` and its indented body | `::: tab {title=…}` inside `::: tabs` (§@[sec:containers]) | E | kept indefinitely: MkDocs Material renders it |
 | `<div class="x" markdown>` | `::: div {.x}` (§@[sec:containers]) | E | `md_in_html`; kept indefinitely, emitted by the `mkdocs` profile |
 | `{: .cls #id}` | `{.cls #id}` | E | Python-Markdown `attr_list` colon; deprecated |
+| `{ .c .annotate }` as a whole fence info string | `c {.annotate}` | E | superfences' braces-only spelling: the first class is the language (§@[sec:grammar], family 4); deprecated, Appendix @[app:deprecations] |
 | `[[Page Title]]`, optional label after a vertical bar | `Link` to the project file | D | wiki links; which file a title names is the site's *(processor)*, so the link is kept as typed and reported `compat-unsupported` |
 | critic markup: insert `++`, delete `--`, substitute `~~ ~> ~~`, highlight `==`, comment in double angle brackets, each wrapped in braces | `Span{.critic}` holding `Underline`, `Strikeout`, the two in order, or `Comment`; the highlight is a plain `Highlight` | E | see below; the printer emits the critic spelling, and nothing fires inside code, where the extension does |
 | `:smile:` | `Str` holding the character | E | emoji, GitHub's name table; the printer emits the character (§@[sec:inline]) |
@@ -2387,6 +2405,7 @@ Table: Deprecated spellings and their horizons. {#tbl:deprecations}
 | `press.callout_style`, `press.admonition_style` | `press.callouts.style` | draft 3 | fmt |
 | `--no-promote-title` CLI flag | `title: null` | (none) | indefinite |
 | `{: .cls #id}` attribute list | `{.cls #id}` | draft 3 | fmt |
+| `{ .lang .cls }` braces-only fence info | `lang {.cls}` | draft 3 | fmt |
 | `[=a/b "…"]` progress fraction | `[=NN% "…"]` | draft 3 | fmt |
 | `=== "Title"` tabs | `::: tabs` / `::: tab {title=…}` | draft 3 | indefinite (MkDocs Material renders them) |
 | `<div markdown>` | `::: div` | draft 3 | indefinite (the only container a Python-Markdown site renders) |

@@ -299,22 +299,38 @@ pub struct FenceInfo {
     /// Text of the info string that did not parse as options, kept for the
     /// listing.
     pub rest: Option<String>,
+    /// The info string was superfences' braces-only spelling
+    /// (`{ .c .annotate }`), whose first class is the language: the
+    /// caller reports it `deprecated` (spec §Lexical grammar, family 4).
+    pub braced: bool,
 }
 
 /// Parses `lang [node] [key=value…] [{attrs}]`: bare `key=value` options
 /// (spec §Lexical grammar, family 4) and, at the end, an attribute list in
 /// braces with the C1 value grammar, which is the only spelling that can
 /// carry classes (`{.snippet caption="Title" width="60%"}`).
+///
+/// `pymdownx.superfences` also spells the whole info string as one
+/// attribute list with no bare word before it (`{ .c .annotate }`, the
+/// form Material documents for annotations). CommonMark splits an info
+/// string on its first whitespace, so that spelling reaches this function
+/// as a `lang` of `{` or `{.c`: it is recombined and read as the
+/// attribute list it is, the first class becoming the language. A
+/// language of `{` is never returned.
 pub fn parse_fence_info(lang: Option<&str>, meta: Option<&str>) -> Option<FenceInfo> {
     let lang = lang?.trim();
     if lang.is_empty() {
         return None;
+    }
+    if lang.starts_with('{') {
+        return braces_only(lang, meta);
     }
     let mut info = FenceInfo {
         lang: lang.to_string(),
         node: None,
         attrs: Attrs::new(),
         rest: None,
+        braced: false,
     };
     let Some(meta) = meta else {
         return Some(info);
@@ -353,6 +369,36 @@ pub fn parse_fence_info(lang: Option<&str>, meta: Option<&str>) -> Option<FenceI
         info.rest = Some(rest.join(" "));
     }
     Some(info)
+}
+
+/// The braces-only info string of `pymdownx.superfences`: the whole
+/// string is one attribute list and its first class is the language
+/// (`{ .c .annotate }` → `c {.annotate}`). A group that does not parse as
+/// an attribute list is no info string at all — the fence is a plain
+/// listing with no language, never one whose language is `{`. A group
+/// with no class leaves `lang` empty: the list has no language to attach
+/// to and the caller reports `attr-no-host`.
+fn braces_only(lang: &str, meta: Option<&str>) -> Option<FenceInfo> {
+    let mut whole = lang.to_string();
+    if let Some(meta) = meta {
+        whole.push(' ');
+        whole.push_str(meta);
+    }
+    let whole = whole.trim();
+    let inner = whole.strip_prefix('{')?.strip_suffix('}')?;
+    let mut attrs = parse_attrs(inner)?;
+    attrs.id_span = None;
+    let lang = match attrs.classes.is_empty() {
+        true => String::new(),
+        false => attrs.classes.remove(0),
+    };
+    Some(FenceInfo {
+        lang,
+        node: None,
+        attrs,
+        rest: None,
+        braced: true,
+    })
 }
 
 /// Splits a container info string into its name and the raw attribute list.
@@ -500,6 +546,47 @@ mod tests {
         let attrs = parse_attrs(": #id").unwrap();
         let span = attrs.id_span.unwrap().0;
         assert_eq!((span.start, span.end), (3, 5), "relative to the whole text");
+    }
+
+    #[test]
+    fn fence_info_braces_only() {
+        // superfences' spelling: CommonMark hands the first word as the
+        // language, so `{` and `{.c` both have to be recombined.
+        for (lang, meta) in [
+            ("{", Some(".c .annotate }")),
+            ("{.c", Some(".annotate}")),
+            ("{.c", Some(".annotate }")),
+            ("{", Some(": .c .annotate}")),
+        ] {
+            let info = parse_fence_info(Some(lang), meta).unwrap();
+            assert_eq!(info.lang, "c", "{lang} {meta:?}");
+            assert_eq!(info.attrs.classes, vec!["annotate"], "{lang} {meta:?}");
+            assert!(info.braced);
+            assert!(info.node.is_none());
+        }
+        let info = parse_fence_info(Some("{.c}"), None).unwrap();
+        assert_eq!(info.lang, "c");
+        assert!(info.attrs.classes.is_empty());
+        // An id and an option travel with it; the first class still wins.
+        let info = parse_fence_info(Some("{#x"), Some(".c title=\"a b\"}")).unwrap();
+        assert_eq!(info.lang, "c");
+        assert_eq!(info.attrs.id.as_deref(), Some("x"));
+        assert_eq!(info.attrs.get("title"), Some("a b"));
+        // No class: no language, and the caller reports `attr-no-host`.
+        let info = parse_fence_info(Some("{"), Some("title=\"only\" }")).unwrap();
+        assert!(info.lang.is_empty());
+        assert!(info.braced);
+        // Never a language of `{`.
+        for (lang, meta) in [
+            ("{", None),
+            ("{", Some("not an attribute list")),
+            ("{.c", Some("no closing brace")),
+        ] {
+            assert!(
+                parse_fence_info(Some(lang), meta).map_or(true, |i| i.lang != "{"),
+                "{lang} {meta:?}"
+            );
+        }
     }
 
     #[test]

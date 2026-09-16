@@ -543,6 +543,27 @@ impl Lowerer {
         };
         let mut options = info.attrs.clone();
         options.id_span = None;
+        if info.braced {
+            if info.lang.is_empty() {
+                // A braces-only info string with no class names no
+                // language, and the canonical grammar has no spelling for
+                // options without one: the list has no host.
+                self.diag(
+                    Code::AttrNoHost,
+                    span,
+                    "the attribute list of the fence names no language",
+                );
+                return Block::CodeBlock(CodeBlock {
+                    meta,
+                    text: code.value.clone(),
+                    lang: None,
+                    options: Attrs::new(),
+                });
+            }
+            // superfences' braces-only info string (spec §Lexical
+            // grammar, family 4): the node reprint is the fix.
+            self.deprecated(span, "{ .lang .cls }", "lang {.cls}");
+        }
         // `{: .cls}` on the info string: the node reprint is the fix.
         if let Some(meta) = code.meta.as_deref() {
             if let Some(at) = meta.find('{') {

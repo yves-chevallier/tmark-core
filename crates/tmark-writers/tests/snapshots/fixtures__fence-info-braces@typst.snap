@@ -1,0 +1,27 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+#ts-code(class: ("annotate",))[
+```c
+int x;
+```
+]
+
+---requires---
+{
+  "packages": [
+    "fvextra",
+    "tcolorbox"
+  ],
+  "fragments": [
+    "ts-code"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

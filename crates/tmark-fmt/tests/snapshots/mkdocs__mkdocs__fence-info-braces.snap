@@ -1,0 +1,7 @@
+---
+source: crates/tmark-fmt/tests/mkdocs.rs
+expression: mkdocs(&canonical)
+---
+```c {.annotate}
+int x;
+```
