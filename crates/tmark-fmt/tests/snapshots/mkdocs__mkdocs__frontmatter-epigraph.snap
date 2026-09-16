@@ -1,0 +1,13 @@
+---
+source: crates/tmark-fmt/tests/mkdocs.rs
+expression: mkdocs(&canonical)
+---
+---
+epigraph:
+  quote: Simplicity is prerequisite for reliability.
+  source: Edsger W. Dijkstra
+---
+
+# Reliability
+
+Everything else follows.

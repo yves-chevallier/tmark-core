@@ -24,7 +24,7 @@ use tmark_ir::{
 };
 use tmark_registry::{join, Loader, Resolution, Resolved};
 
-use crate::common::{media, refs, Out};
+use crate::common::{epigraph, media, refs, Out};
 use crate::html::{self, escape};
 use crate::Media;
 
@@ -103,6 +103,7 @@ pub fn lower_web(
     opts: &WebOptions,
 ) -> Lowered {
     let mut lowerer = Lowerer::new(doc, res, loader, opts);
+    lowerer.epigraph = lowerer.front_epigraph(doc);
     let file = File {
         text,
         doc,
@@ -186,6 +187,12 @@ struct Lowerer<'a> {
     /// at column zero, rather than the `!!!` form, whose body is indented
     /// by four.
     html_parent: bool,
+    /// The page's front-matter epigraph, until the opening heading takes
+    /// it; what is left when the file is lowered goes at the top, which is
+    /// where a page opening with no heading wants it.
+    epigraph: Option<String>,
+    /// The opening heading the epigraph goes under, when there is one.
+    epigraph_at: Option<NodeId>,
 }
 
 impl<'a> Lowerer<'a> {
@@ -205,6 +212,10 @@ impl<'a> Lowerer<'a> {
                 keys.insert(k.clone(), v.clone());
             }
         }
+        let epigraph_at = match (epigraph::front_matter(doc), doc.blocks.first()) {
+            (Some(_), Some(Block::Header(h))) => Some(h.meta.id),
+            _ => None,
+        };
         Lowerer {
             main: doc,
             res,
@@ -216,6 +227,8 @@ impl<'a> Lowerer<'a> {
             stack: Vec::new(),
             front_matter,
             html_parent: false,
+            epigraph: None,
+            epigraph_at,
         }
     }
 
@@ -250,6 +263,10 @@ impl<'a> Lowerer<'a> {
     // ------------------------------------------------------------- files
 
     /// The lowered text of one file: every edit of its tree, spliced.
+    ///
+    /// The page's own front-matter epigraph is spliced with its opening
+    /// heading, which carries no span of its own otherwise; a page that
+    /// opens with no heading takes it at the top.
     fn file(&mut self, f: &File) -> String {
         let mut edits = Vec::new();
         self.blocks(f, &f.doc.blocks, &mut edits);
@@ -263,7 +280,35 @@ impl<'a> Lowerer<'a> {
                 replacement: Replacement::Text(e.text),
             })
             .collect();
-        edit_many(f.text, f.doc, node_edits).unwrap_or_else(|_| f.text.to_string())
+        let out = edit_many(f.text, f.doc, node_edits).unwrap_or_else(|_| f.text.to_string());
+        // Only the page carries an epigraph; an included file is lowered
+        // through the same method while the page's own is still pending.
+        match self
+            .stack
+            .is_empty()
+            .then(|| self.epigraph.take())
+            .flatten()
+        {
+            Some(html) => format!("{html}\n\n{out}"),
+            None => out,
+        }
+    }
+
+    /// `<blockquote class="ts-epigraph">` for the front matter's
+    /// `epigraph: {quote, source}` (spec §BlockQuote). The two values are
+    /// plain text, so the wrapper carries no `markdown` attribute.
+    fn front_epigraph(&self, doc: &Document) -> Option<String> {
+        let epigraph = epigraph::front_matter(doc)?;
+        let mut out = format!(
+            "<blockquote class=\"{}\">{}",
+            self.class("epigraph"),
+            escape::text(epigraph.quote.trim())
+        );
+        if let Some(source) = epigraph.source.as_deref().filter(|s| !s.trim().is_empty()) {
+            out.push_str(&format!("<footer>{}</footer>", escape::text(source.trim())));
+        }
+        out.push_str("</blockquote>");
+        Some(out)
     }
 
     /// Records a splice, unless it would change nothing.
@@ -445,11 +490,25 @@ impl<'a> Lowerer<'a> {
                 }
                 _ => None,
             },
-            Block::Header(h) => (h.attrs.media() == Some("web")).then(|| {
-                let mut h = h.clone();
-                h.attrs.kv.retain(|(k, _)| k != "media");
-                print_node_with(NodeRef::Block(&Block::Header(h)), Profile::Mkdocs)
-            }),
+            Block::Header(h) => {
+                let id = h.meta.id;
+                let printed = (h.attrs.media() == Some("web")).then(|| {
+                    let mut h = h.clone();
+                    h.attrs.kv.retain(|(k, _)| k != "media");
+                    print_node_with(NodeRef::Block(&Block::Header(h)), Profile::Mkdocs)
+                });
+                let epigraph = match self.epigraph_at == Some(id) {
+                    true => self.epigraph.take(),
+                    false => None,
+                };
+                match epigraph {
+                    Some(html) => {
+                        let head = printed.unwrap_or_else(|| self.verbatim(f, block, enclosing));
+                        Some(format!("{head}\n\n{html}"))
+                    }
+                    None => printed,
+                }
+            }
             Block::CodeBlock(c) => match caption {
                 Some(caption) => Some(self.listing(f, c, caption, enclosing)),
                 None => self.fence(f, c),

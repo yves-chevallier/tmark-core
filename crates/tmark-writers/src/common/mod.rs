@@ -4,6 +4,7 @@
 //! a base class."
 
 pub mod abbr;
+pub mod epigraph;
 pub mod logos;
 pub mod media;
 pub mod out;

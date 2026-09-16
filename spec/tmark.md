@@ -711,7 +711,7 @@ Table: The metadata keys, read by TMark. {#tbl:keys-meta}
 | `date` | ISO date, free text, or `commit` | absent | `commit` is resolved by the processor from the repository *(processor)*; TMark keeps it as written. |
 | `id` | string | absent | Document identifier, the head of every key the document publishes for cross-document references. |
 | `lang` | BCP 47 tag (`fr`, `en-GB`) | template's | Document language: hyphenation, quotes, list-of-figures words, typographic spacing. |
-| `epigraph` | `{quote, source}` | absent | An epigraph placed before the first heading (§@[sec:structure]). |
+| `epigraph` | `{quote, source}` | absent | An epigraph set under the document's opening heading (§@[sec:structure]). |
 
 Table: The `press` groups, and who reads them. {#tbl:keys-press}
 
@@ -896,7 +896,12 @@ Backends: `\tslead{…}`, a bold run-in, `<p><strong class="lead">`.
 `>`; class C. The attribute list is a line of its own closing the quote
 (Table @[tbl:hosts]); a quote tagged `{.epigraph}` renders as an epigraph
 (`\tsepigraph`, `#ts-epigraph`, `<blockquote class="epigraph">`), and the
-front-matter `epigraph:` key places one before the first heading.
+front-matter `epigraph:` key places one under the document's opening
+heading — between that heading and its content, or at the top of the
+document when it opens with no heading. Its `quote` and `source` are
+plain text, not Markdown. The web lowering prints it as
+`<blockquote class="ts-epigraph">` with the source in a `<footer>`, the
+`ts-` being the lowering's class prefix.
 Backends otherwise: `displayquote` (csquotes), `#quote(block: true)`,
 `<blockquote>`.
 

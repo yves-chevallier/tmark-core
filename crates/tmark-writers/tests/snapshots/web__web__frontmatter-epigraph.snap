@@ -1,0 +1,15 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+---
+epigraph:
+  quote: Simplicity is prerequisite for reliability.
+  source: Edsger W. Dijkstra
+---
+
+# Reliability
+
+<blockquote class="ts-epigraph">Simplicity is prerequisite for reliability.<footer>Edsger W. Dijkstra</footer></blockquote>
+
+Everything else follows.

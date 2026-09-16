@@ -265,6 +265,15 @@ column and do not inherit the rule. Inline spans that are not the text's (a titl
 parsed from an attribute value, a `yaml table` cell) are detected — every
 `Str` must read back from its span — and printed instead of sliced.
 
+The page's front-matter epigraph is the one thing the lowering prints
+from the metadata rather than from a span (C69): `<blockquote
+class="ts-epigraph">` with the source in a `<footer>`, spliced with the
+opening heading — the node that holds the place it belongs to — and
+prepended to the page when it opens with no heading. The three writers
+take the same epigraph as a block quote node instead
+(`common::epigraph::blocks`), so each keeps the single emitter it already
+had for `> {.epigraph}`.
+
 Deviations from the per-construct table, taken here: the inline aside is
 a `<span class="ts-aside">` (see above); the `data-ts-table` attribute
 carries the value `1` (`md_in_html` re-serialises a bare attribute as
