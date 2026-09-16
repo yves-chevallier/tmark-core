@@ -222,6 +222,16 @@ replacement text is:
   `Document` from `Resolved.included`, its text from the `Loader`, its own
   labels and numbers from the same `Resolved`); `--8<--` stays for
   `snippets`;
+- the file's text as the body of a fence whose info string carries
+  `include="file"` (spec §Includes), the attribute dropped from the
+  printed info string and `title=` and the rest kept: `superfences`
+  refuses an option it does not know and renders the whole fence as one
+  inline code span, so a page that followed the deprecation of `--8<--`
+  lost every listing. The path goes through the `Loader` like every other
+  file; a file it cannot serve keeps the fence bytes and is
+  `include-missing` in `Lowered.diagnostics`. A fence still *written*
+  `--8<--` is left to `pymdownx.snippets`, like a block snippet, although
+  the parser gives it the same IR;
 - the empty string for `media=print`, raw LaTeX/Typst, a consumed caption
   line or `yaml table-config`; a removed inline takes one adjacent space
   with it (the zero-width collapse). `media=web` unwraps.
@@ -253,8 +263,10 @@ from the print numbering). Not lowered: `media=web` on a block other than
 a heading (the attribute reaches `attr_list`, harmless); the blank lines
 left where a caption or configuration was emptied stay (Markdown ignores
 them). `Lowered.diagnostics` carries only what the lowering itself found
-(an include the resolution did not parse); `ref-unresolved` and
-`include-missing` are the resolution's.
+(an include the resolution did not parse, a fence `include=` the loader
+cannot serve — the resolution collects no fence include);
+`ref-unresolved` and the block form's `include-missing` are the
+resolution's.
 
 Tests: `tests/web.rs` snapshots every conformance fixture (`web__*`), a
 document exercising every row of the table with one assertion per row,

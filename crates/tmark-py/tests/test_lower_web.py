@@ -81,3 +81,28 @@ def test_lower_web_includes_through_the_loader():
     doc = tmark.parse(text)
     out = tmark.lower_web(text, doc, None, L())
     assert out["text"] == "## Part {#sec:part}\n\nInside, see [Part](#sec:part).\n\nSee [Part](#sec:part).\n"
+
+
+def test_lower_web_splices_a_fence_include_through_the_loader():
+    """`include="file"` on a fence: superfences refuses the option, so the
+    lowering reads the file and drops the attribute (spec §Includes)."""
+
+    class L:
+        def __init__(self):
+            self.seen = []
+
+        def load(self, from_path, rel):
+            self.seen.append((from_path, rel))
+            return "int main(void) { return 0; }\n" if rel == "src/iota.c" else None
+
+    text = '```c title="iota.c" include="src/iota.c"\n```\n\n```c include="src/gone.c"\n```\n'
+    doc = tmark.parse(text, file="guide/page.md")
+    loader = L()
+    res = tmark.resolve(doc, None, {"path": "guide/page.md"})
+    out = tmark.lower_web(text, doc, res, loader, None)
+    assert loader.seen == [("guide/page.md", "src/iota.c"), ("guide/page.md", "src/gone.c")]
+    assert '```c title="iota.c"\nint main(void) { return 0; }\n```' in out["text"]
+    assert "include=" not in out["text"].split("\n\n")[0]
+    # A file the loader cannot serve keeps the fence and is reported.
+    assert '```c include="src/gone.c"\n```' in out["text"]
+    assert [d["code"] for d in out["diagnostics"]] == ["include-missing"]

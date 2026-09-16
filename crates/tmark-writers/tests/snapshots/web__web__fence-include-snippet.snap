@@ -4,3 +4,5 @@ expression: snapshot
 ---
 ```python include="hanoi.py"
 ```
+---diagnostics---
+warning include-missing: included file `hanoi.py` not found; the fence is left as written

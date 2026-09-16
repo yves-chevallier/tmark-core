@@ -249,6 +249,12 @@ and [web only]{media=web}.
 graph TD; A-->B;
 ```
 
+```c title="iota.c" include="parts/iota.c"
+```
+
+```c include="parts/absent.c"
+```
+
 - A list item with @fw:ota
 
   ::: note {title=Nested}
@@ -272,10 +278,13 @@ Unknown container with @fw:ota.
 "#;
 
 fn rows_loader() -> MemoryLoader {
-    MemoryLoader::new().with("refs.bib", BIB).with(
-        "parts/extra.md",
-        "## Included {#sec:extra}\n\nIncluded #(fw:extra), see @fw:watchdog and @sec:extra.\n",
-    )
+    MemoryLoader::new()
+        .with("refs.bib", BIB)
+        .with(
+            "parts/extra.md",
+            "## Included {#sec:extra}\n\nIncluded #(fw:extra), see @fw:watchdog and @sec:extra.\n",
+        )
+        .with("parts/iota.c", "int main(void) { return 0; }\n")
 }
 
 #[test]
@@ -337,6 +346,11 @@ fn every_row_of_the_table() {
     has("<div class=\"wrapper\" markdown=\"1\">\n\nWritten the pymdownx way.\n\n</div>");
     // A container already written as HTML keeps its bytes.
     has("<div class=\"kept\" markdown>\nAlready HTML.\n</div>");
+    // `include=` is spliced from the loader; `title=` survives, the
+    // attribute superfences would refuse does not.
+    has("```c title=\"iota.c\"\nint main(void) { return 0; }\n```");
+    // A file the loader cannot serve keeps the fence and is reported.
+    has("```c include=\"parts/absent.c\"\n```");
     has("Inline <span class=\"ts-aside\" data-side=\"right\">margin note</span> and <span class=\"ts-index\" data-tag=\"hal\" data-tag1=\"layer\"></span>, <span class=\"ts-index\" data-tag=\"boot\" data-main></span>,\n<span class=\"ts-smallcaps\">nasa</span>, <span class=\"ts-smallcaps\">caps</span>, ++ctrl+alt+s++, ==x==, ~~y~~, H~2~O,\nE=mc^2^, `#!py print(1)`, <u>u</u>, <span id=\"sp\" class=\"c\" lang=\"fr\">x</span>,\n<b>raw</b>,,\nand web only.");
     assert!(!text.contains("\\clearpage"));
     has("<hr class=\"raw\" />");
@@ -351,7 +365,14 @@ fn every_row_of_the_table() {
     has("Term\n:   A definition with [FW-03](#fw:ota).");
     has("Footnote[^1] and *[HAL]: Hardware abstraction layer.\n\n[^1]: A note with [FW-03](#fw:ota).");
     has("::: gadget {x=1}\nUnknown container with [FW-03](#fw:ota).\n:::\n\n---\n");
-    assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
+    // The one diagnostic the lowering itself finds: the fence whose
+    // `include=` names a file the loader does not serve.
+    let codes: Vec<_> = lowered
+        .diagnostics
+        .iter()
+        .map(|d| d.code.id())
+        .collect::<Vec<_>>();
+    assert_eq!(codes, ["include-missing"], "{:?}", lowered.diagnostics);
 }
 
 /// The mkdocstrings case: `::: pkg.mod` is a foreign directive (spec C40)

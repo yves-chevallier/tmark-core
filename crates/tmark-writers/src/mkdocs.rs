@@ -425,7 +425,10 @@ impl<'a> Lowerer<'a> {
                 h.attrs.kv.retain(|(k, _)| k != "media");
                 print_node_with(NodeRef::Block(&Block::Header(h)), Profile::Mkdocs)
             }),
-            Block::CodeBlock(c) => caption.map(|caption| self.listing(f, c, caption, enclosing)),
+            Block::CodeBlock(c) => match caption {
+                Some(caption) => Some(self.listing(f, c, caption, enclosing)),
+                None => self.fence(f, c),
+            },
             Block::Table(t) => self.table(f, t, caption, enclosing),
             Block::TableConfig(_) => Some(String::new()),
             Block::Figure(figure) => Some(self.figure(f, figure, caption)),
@@ -607,11 +610,47 @@ impl<'a> Lowerer<'a> {
             out.push_str(&format!(" id=\"{}\"", escape::attr(id)));
         }
         out.push_str(">\n\n");
-        out.push_str(&dedent(f.slice(code.meta.span), enclosing));
+        let body = self
+            .fence(f, code)
+            .unwrap_or_else(|| dedent(f.slice(code.meta.span), enclosing));
+        out.push_str(&body);
         out.push_str("\n\n");
         out.push_str(&self.figcaption(f, caption, id.as_deref()));
         out.push_str("\n</figure>");
         out
+    }
+
+    /// A fence whose info string carries `include="file"` (spec
+    /// §Includes): the file's text becomes the body and the attribute is
+    /// dropped, `title=` and the rest kept. `pymdownx.superfences` refuses
+    /// an option it does not know and renders the whole fence as one
+    /// inline code span, so a page that follows the deprecation of
+    /// `--8<--` would otherwise lose every listing. `None` leaves the
+    /// bytes alone: a fence with no `include=`, the `--8<--` spelling
+    /// (which is `pymdownx.snippets`' to expand, like a block snippet),
+    /// or a file the loader cannot serve — `include-missing`, as
+    /// everywhere else.
+    fn fence(&mut self, f: &File, code: &CodeBlock) -> Option<String> {
+        let path = code.options.get("include")?.to_string();
+        let opener = f.slice(code.meta.span).lines().next().unwrap_or("");
+        if !opener.contains("include=") {
+            return None;
+        }
+        let Some(text) = self.loader.load(&f.path, &path) else {
+            self.diagnostics.push(Diagnostic::new(
+                tmark_ir::Code::IncludeMissing,
+                code.meta.span,
+                format!("included file `{path}` not found; the fence is left as written"),
+            ));
+            return None;
+        };
+        let mut spliced = code.clone();
+        spliced.options.kv.retain(|(k, _)| k != "include");
+        spliced.text = text.trim_end_matches('\n').to_string();
+        Some(print_node_with(
+            NodeRef::Block(&Block::CodeBlock(spliced)),
+            Profile::Mkdocs,
+        ))
     }
 
     // ------------------------------------------------------------ tables
