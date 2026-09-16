@@ -169,7 +169,7 @@ graph TD; A-->B;
 int main(void) { return 0; }
 ```
 
-```c include="parts/absent.c"
+```c
 ```
 
 - A list item with [FW-03](#fw:ota)
@@ -211,4 +211,4 @@ A `!!!` line cannot carry a `<span>`.
 <li id="ref-ko20">Ada Knuth, Bob Ritchie. (2020). <em>Systems</em></li>
 </ol>
 ---diagnostics---
-warning include-missing: included file `parts/absent.c` not found; the fence is left as written
+warning include-missing: included file `parts/absent.c` not found; the fence is printed empty

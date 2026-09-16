@@ -625,25 +625,28 @@ impl<'a> Lowerer<'a> {
     /// dropped, `title=` and the rest kept. `pymdownx.superfences` refuses
     /// an option it does not know and renders the whole fence as one
     /// inline code span, so a page that follows the deprecation of
-    /// `--8<--` would otherwise lose every listing. `None` leaves the
-    /// bytes alone: a fence with no `include=`, the `--8<--` spelling
-    /// (which is `pymdownx.snippets`' to expand, like a block snippet),
-    /// or a file the loader cannot serve — `include-missing`, as
-    /// everywhere else.
+    /// `--8<--` would otherwise lose every listing. A file the loader
+    /// cannot serve is `include-missing`, and the fence is reprinted the
+    /// same way with an **empty** body: keeping the bytes would keep
+    /// `include=` too, and that inline code span swallows the paragraph
+    /// after it. `None` leaves the bytes alone: a fence with no
+    /// `include=`, or the `--8<--` spelling, which is
+    /// `pymdownx.snippets`' to expand, like a block snippet.
     fn fence(&mut self, f: &File, code: &CodeBlock) -> Option<String> {
         let path = code.options.get("include")?.to_string();
         let opener = f.slice(code.meta.span).lines().next().unwrap_or("");
         if !opener.contains("include=") {
             return None;
         }
-        let Some(text) = self.loader.load(&f.path, &path) else {
+        let loaded = self.loader.load(&f.path, &path);
+        let text = loaded.unwrap_or_else(|| {
             self.diagnostics.push(Diagnostic::new(
                 tmark_ir::Code::IncludeMissing,
                 code.meta.span,
-                format!("included file `{path}` not found; the fence is left as written"),
+                format!("included file `{path}` not found; the fence is printed empty"),
             ));
-            return None;
-        };
+            String::new()
+        });
         let mut spliced = code.clone();
         spliced.options.kv.retain(|(k, _)| k != "include");
         spliced.text = text.trim_end_matches('\n').to_string();

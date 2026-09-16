@@ -100,6 +100,19 @@ those anchors can be renamed back.
   they all pointed at the construct, sees real ones; a consumer that
   slices the file at a node's span gets the node, not the construct.
   The IR schema is unchanged.
+- **An unresolved fence `include=` no longer keeps the fence bytes.**
+  `lower_web` now reprints the fence *without* the option and with an
+  empty body — `title=` and the rest kept — and still reports
+  `include-missing` (the message reads "the fence is printed empty").
+  `pymdownx.superfences` does not parse `include=` in an info string, so
+  the kept bytes were no fence at all on the site: `convert` gave
+  `<p><code>c include="missing.c"</code></p>` and the paragraph after it
+  was swallowed. Verified with the installed extension set: an empty
+  fence renders as `<div class="highlight">…` and `title=` still shows
+  as the `<span class="filename">`. A fence still written `--8<--` is
+  untouched, as before. Anything on TeXSmith's side diffing lowered
+  pages against a recorded artifact must re-record a page whose include
+  does not resolve.
 
 ### Known and left
 

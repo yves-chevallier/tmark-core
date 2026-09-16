@@ -228,10 +228,15 @@ replacement text is:
   refuses an option it does not know and renders the whole fence as one
   inline code span, so a page that followed the deprecation of `--8<--`
   lost every listing. The path goes through the `Loader` like every other
-  file; a file it cannot serve keeps the fence bytes and is
-  `include-missing` in `Lowered.diagnostics`. A fence still *written*
-  `--8<--` is left to `pymdownx.snippets`, like a block snippet, although
-  the parser gives it the same IR;
+  file; a file it cannot serve is `include-missing` in
+  `Lowered.diagnostics` and the fence is printed the same way with an
+  **empty body** — the option must go even when the include fails,
+  because `superfences` does not parse `include=` at all, so a kept
+  fence renders as `<p><code>c include="f.c"</code></p>` and swallows
+  the paragraph after it; `title=` and the rest still name the empty
+  listing. A fence still *written* `--8<--` is left to
+  `pymdownx.snippets`, like a block snippet, although the parser gives
+  it the same IR;
 - the empty string for `media=print`, raw LaTeX/Typst, a consumed caption
   line or `yaml table-config`; a removed inline takes one adjacent space
   with it (the zero-width collapse). `media=web` unwraps.

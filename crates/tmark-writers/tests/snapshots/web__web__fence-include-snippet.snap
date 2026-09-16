@@ -2,7 +2,7 @@
 source: crates/tmark-writers/tests/web.rs
 expression: snapshot
 ---
-```python include="hanoi.py"
+```python
 ```
 ---diagnostics---
-warning include-missing: included file `hanoi.py` not found; the fence is left as written
+warning include-missing: included file `hanoi.py` not found; the fence is printed empty

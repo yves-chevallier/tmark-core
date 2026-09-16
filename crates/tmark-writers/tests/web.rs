@@ -352,8 +352,14 @@ fn every_row_of_the_table() {
     // `include=` is spliced from the loader; `title=` survives, the
     // attribute superfences would refuse does not.
     has("```c title=\"iota.c\"\nint main(void) { return 0; }\n```");
-    // A file the loader cannot serve keeps the fence and is reported.
-    has("```c include=\"parts/absent.c\"\n```");
+    // A file the loader cannot serve is reported, and the fence is
+    // reprinted empty: `include=` must not reach superfences, which reads
+    // the whole fence as an inline code span and eats what follows it.
+    has("```c\n```");
+    assert!(
+        !text.contains("include="),
+        "an `include=` survived in\n{text}"
+    );
     has("Inline <span class=\"ts-aside\" data-side=\"right\">margin note</span> and <span class=\"ts-index\" data-tag=\"hal\" data-tag1=\"layer\"></span>, <span class=\"ts-index\" data-tag=\"boot\" data-main></span>,\n<span class=\"ts-smallcaps\">nasa</span>, <span class=\"ts-smallcaps\">caps</span>, ++ctrl+alt+s++, ==x==, ~~y~~, H~2~O,\nE=mc^2^, `#!py print(1)`, <u>u</u>, <span id=\"sp\" class=\"c\" lang=\"fr\">x</span>,\n<b>raw</b>,,\nand web only.");
     assert!(!text.contains("\\clearpage"));
     has("<hr class=\"raw\" />");
@@ -380,6 +386,34 @@ fn every_row_of_the_table() {
         .map(|d| d.code.id())
         .collect::<Vec<_>>();
     assert_eq!(codes, ["include-missing"], "{:?}", lowered.diagnostics);
+}
+
+/// A fence whose `include=` the loader refuses is reprinted **without**
+/// the attribute and with an empty body, not kept as written: PyMdownX's
+/// `superfences` does not parse `include=` in an info string, so the kept
+/// bytes are no fence at all — `convert` gives `<p><code>c
+/// include="missing.c"</code></p>` and the paragraph after it is eaten.
+/// `title=` and the other options survive, so the page shows an empty
+/// listing under its title, and `include-missing` is still reported.
+#[test]
+fn an_unresolved_fence_include_is_reprinted_without_the_option() {
+    let text = "```c title=\"missing.c\" include=\"parts/missing.c\"\n```\n\nA paragraph after the fence.\n";
+    let lowered = lower(text);
+    assert!(
+        !lowered.text.contains("include="),
+        "an `include=` survived in\n{}",
+        lowered.text
+    );
+    assert_eq!(
+        lowered.text,
+        "```c title=\"missing.c\"\n```\n\nA paragraph after the fence.\n"
+    );
+    let codes: Vec<_> = lowered.diagnostics.iter().map(|d| d.code.id()).collect();
+    assert_eq!(codes, ["include-missing"], "{:?}", lowered.diagnostics);
+    // A fence still written `--8<--` is `pymdownx.snippets`' to expand.
+    let snippet = lower("```c\n--8<-- \"parts/missing.c\"\n```\n");
+    assert_eq!(snippet.text, "```c\n--8<-- \"parts/missing.c\"\n```\n");
+    assert!(snippet.diagnostics.is_empty(), "{:?}", snippet.diagnostics);
 }
 
 /// The mkdocstrings case: `::: pkg.mod` is a foreign directive (spec C40)

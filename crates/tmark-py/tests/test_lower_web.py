@@ -102,7 +102,29 @@ def test_lower_web_splices_a_fence_include_through_the_loader():
     out = tmark.lower_web(text, doc, res, loader, None)
     assert loader.seen == [("guide/page.md", "src/iota.c"), ("guide/page.md", "src/gone.c")]
     assert '```c title="iota.c"\nint main(void) { return 0; }\n```' in out["text"]
-    assert "include=" not in out["text"].split("\n\n")[0]
-    # A file the loader cannot serve keeps the fence and is reported.
-    assert '```c include="src/gone.c"\n```' in out["text"]
+    # A loader that refuses the file is reported, and the fence is still
+    # reprinted without the option: `superfences` does not parse
+    # `include=`, so a kept fence is one inline code span that swallows
+    # what follows it. The body is empty, `title=` and the rest survive.
+    assert '```c\n```' in out["text"]
+    assert "include=" not in out["text"]
+    assert [d["code"] for d in out["diagnostics"]] == ["include-missing"]
+
+
+def test_lower_web_drops_include_from_a_fence_a_refusing_loader_cannot_serve():
+    """A loader that serves nothing: the fence keeps its `title=`, loses
+    `include=`, and the paragraph after it is not swallowed."""
+
+    class Refusing:
+        def load(self, from_path, rel):
+            return None
+
+    text = '```c title="missing.c" include="parts/missing.c"\n```\n\nA paragraph after the fence.\n'
+    doc = tmark.parse(text, file="page.md")
+    res = tmark.resolve(doc, None, {"path": "page.md"})
+    out = tmark.lower_web(text, doc, res, Refusing(), None)
+    assert out["text"] == (
+        '```c title="missing.c"\n```\n\nA paragraph after the fence.\n'
+    )
+    assert "include=" not in out["text"]
     assert [d["code"] for d in out["diagnostics"]] == ["include-missing"]
