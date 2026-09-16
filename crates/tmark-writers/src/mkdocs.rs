@@ -289,7 +289,13 @@ impl<'a> Lowerer<'a> {
             .then(|| self.epigraph.take())
             .flatten()
         {
-            Some(html) => format!("{html}\n\n{out}"),
+            Some(html) => {
+                // After the blank lines the page opens with, not before:
+                // a caller that padded the text to keep the file's line
+                // numbers reads its padding back where it left it.
+                let at = out.len() - out.trim_start_matches(['\n', '\r']).len();
+                format!("{}{html}\n\n{}", &out[..at], &out[at..])
+            }
             None => out,
         }
     }
