@@ -19,7 +19,7 @@ doctest = false
 
 [dependencies]
 # The facade with `fs`: the wheel ships the CLI's loader.
-tmark = { path = "../tmark", version = "0.1.0" }
+tmark = { path = "../tmark", version = "0.2.0" }
 # The binding itself: abi3 wheels from Python 3.10 up, one build per platform.
 pyo3 = { workspace = true, features = ["abi3-py310"] }
 # serde_json::Value <-> Python objects; the API is JSON-shaped (ADR 0003).

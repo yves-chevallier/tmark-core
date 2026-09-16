@@ -12,7 +12,7 @@ name = "tmark-lsp"
 path = "src/main.rs"
 
 [dependencies]
-tmark = { path = "../tmark", version = "0.1.0" }
+tmark = { path = "../tmark", version = "0.2.0" }
 # Synchronous LSP transport and the protocol types (ADR 0007); edge crate.
 lsp-server = { workspace = true }
 lsp-types = { workspace = true }

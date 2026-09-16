@@ -16,9 +16,9 @@ fs = []
 
 [dependencies]
 # The IR the registries are built from.
-tmark-ir = { path = "../tmark-ir", version = "0.1.0" }
+tmark-ir = { path = "../tmark-ir", version = "0.2.0" }
 # Included files are parsed here (design/06-registries.md §Includes).
-tmark-syntax = { path = "../tmark-syntax", version = "0.1.0" }
+tmark-syntax = { path = "../tmark-syntax", version = "0.2.0" }
 # Inventories are JSON with a schema (design/06-registries.md §Inventory format).
 serde = { workspace = true }
 serde_json = { workspace = true }
