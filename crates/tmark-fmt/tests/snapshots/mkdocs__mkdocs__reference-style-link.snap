@@ -5,3 +5,5 @@ expression: mkdocs(&canonical)
 [](){#claim}
 
 See [the claim][claim], not [that][no-such-label].
+
+The directive [`#include`][claim] keeps its code span.

@@ -69,10 +69,11 @@ struct Found {
     /// `@key` or `[](#key)`, which shows a number, as opposed to
     /// `[text](#key)`, which shows the author's text.
     numeric: bool,
-    /// The text of the reference-style `[text][id]`, which is a reference
-    /// only when it names a label and stays literal text otherwise; `None`
-    /// for every other spelling.
-    reference_style: Option<String>,
+    /// The reference-style `[text][id]`, which is a reference only when
+    /// it names a label and stays literal text otherwise: its text, for
+    /// the message, and where that text ends, which is where the
+    /// deprecation's fix starts. `None` for every other spelling.
+    reference_style: Option<(String, u32)>,
 }
 
 pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
@@ -112,7 +113,10 @@ pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
                         node_span: l.meta.span,
                         key: id.clone(),
                         numeric: false,
-                        reference_style: Some(plain_text(&l.content)),
+                        reference_style: Some((
+                            plain_text(&l.content),
+                            l.content.last().map_or(0, |i| i.meta().span.end),
+                        )),
                     }),
                     Target::Url(_) | Target::Document(_) => {}
                 },
@@ -139,21 +143,26 @@ pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
         // names no label it is CommonMark's literal text and says nothing
         // — no `deprecated` either, which would fire on every sentence
         // ending a bracketed aside with a bracketed word.
-        if let Some(text) = &reference_style {
+        if let Some((text, text_end)) = &reference_style {
             if matches!(
                 resolution,
                 Resolution::Label { .. } | Resolution::Sibling { .. }
             ) {
-                let canonical = format!("[{text}](#{key})");
+                // The fix rewrites the `][id]` alone, leaving the text
+                // where it is: it may hold markup this stage cannot print
+                // back (a code span, an emphasis), and those bytes are
+                // already the ones the canonical spelling wants.
+                let tail =
+                    (node_span.start < *text_end && *text_end < node_span.end).then(|| Fix {
+                        span: Span::new(node_span.file, *text_end, node_span.end),
+                        replacement: format!("](#{key})"),
+                    });
                 resolved.diagnostics.push(Diagnostic {
-                    fix: Some(Fix {
-                        span: node_span,
-                        replacement: canonical.clone(),
-                    }),
+                    fix: tail,
                     ..Diagnostic::new(
                         Code::Deprecated,
                         node_span,
-                        format!("`[{text}][{key}]` is deprecated, write `{canonical}`"),
+                        format!("`[{text}][{key}]` is deprecated, write `[{text}](#{key})`"),
                     )
                 });
             }

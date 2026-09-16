@@ -15,12 +15,20 @@ CommonMark reads there, says nothing, and is not deprecated either: the
 spelling is an ordinary sentence ending a bracketed aside with a bracketed
 word.
 
+The text may carry markup, as it may in the canonical spelling: the
+tokenizer leaves the brackets in the text nodes around it and the lowering
+cuts the spelling out of them. What it will not do is read a spelling that
+is not verbatim in the source, or that runs over a line end, or that holds
+a link or an image — CommonMark's reading stands there.
+
 ## input
 
 ```md
 []{#claim}
 
 See [the claim][claim], not [that][no-such-label].
+
+The directive [`#include`][claim] keeps its code span.
 ```
 
 ## canonical
@@ -29,6 +37,8 @@ See [the claim][claim], not [that][no-such-label].
 []{#claim}
 
 See [the claim][claim], not [that][no-such-label].
+
+The directive [`#include`][claim] keeps its code span.
 ```
 
 ## ir
@@ -89,6 +99,32 @@ See [the claim][claim], not [that][no-such-label].
           "text": "."
         }
       ]
+    },
+    {
+      "type": "Para",
+      "content": [
+        {
+          "type": "Str",
+          "text": "The directive "
+        },
+        {
+          "type": "Link",
+          "content": [
+            {
+              "type": "Code",
+              "text": "#include"
+            }
+          ],
+          "target": {
+            "type": "Reference",
+            "value": "claim"
+          }
+        },
+        {
+          "type": "Str",
+          "text": " keeps its code span."
+        }
+      ]
     }
   ]
 }
@@ -98,6 +134,7 @@ See [the claim][claim], not [that][no-such-label].
 
 ```text
 deprecated @ 3:5-3:23
+deprecated @ 5:15-5:34
 ```
 
 ## latex

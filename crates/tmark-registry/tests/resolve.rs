@@ -161,11 +161,8 @@ fn reference_style_links_resolve_against_the_labels_alone() {
     // Spec §Ref: `[text][id]` is a textual reference when `id` is a label
     // of the document or of the book, the literal brackets otherwise, and
     // it never reaches the bibliography or the glossary.
-    let doc = parse(
-        "[]{#claim}\n\nSee [the claim][claim], [the finding][fw:boot], [a review][knuth:1984] and [none][nope].\n",
-        FileId::default(),
-    )
-    .document;
+    const SOURCE: &str = "[]{#claim}\n\nSee [the claim][claim], [the finding][fw:boot], [a review][knuth:1984] and [none][nope].\n";
+    let doc = parse(SOURCE, FileId::default()).document;
     let options = ResolveOptions {
         book: vec![tmark_registry::BookLabel {
             key: "fw:boot".to_string(),
@@ -195,11 +192,42 @@ fn reference_style_links_resolve_against_the_labels_alone() {
     // names no label it is CommonMark's literal text and says nothing,
     // `deprecated` included.
     assert_eq!(codes(&r.diagnostics), ["deprecated", "deprecated"]);
-    let fixes: Vec<&str> = r
-        .diagnostics
-        .iter()
-        .filter_map(|d| d.fix.as_ref())
-        .map(|f| f.replacement.as_str())
-        .collect();
-    assert_eq!(fixes, ["[the claim](#claim)", "[the finding](#fw:boot)"]);
+    // The fix rewrites the `][id]` alone, so a text carrying markup keeps
+    // its bytes; applied, the line is the canonical spelling.
+    assert_eq!(
+        apply(SOURCE, &r.diagnostics),
+        "[]{#claim}\n\nSee [the claim](#claim), [the finding](#fw:boot), [a review][knuth:1984] and [none][nope].\n"
+    );
+}
+
+/// A reference whose text carries markup is read the same way, and the
+/// fix leaves that markup alone (spec §Ref).
+#[test]
+fn a_reference_style_link_reads_a_text_that_carries_markup() {
+    let source = "[]{#claim}\n\nSee [the `claim` itself][claim].\n";
+    let doc = parse(source, FileId::default()).document;
+    let r = resolve(&doc, &MemoryLoader::new(), &ResolveOptions::default());
+    assert_eq!(r.refs.len(), 1);
+    assert!(matches!(&r.refs[0].resolution, Resolution::Label { .. }));
+    assert_eq!(codes(&r.diagnostics), ["deprecated"]);
+    assert_eq!(
+        apply(source, &r.diagnostics),
+        "[]{#claim}\n\nSee [the `claim` itself](#claim).\n"
+    );
+}
+
+/// Every fix of `text`, spliced last first (`tmark::apply_fixes`, which
+/// this crate is below).
+fn apply(text: &str, diagnostics: &[tmark_ir::Diagnostic]) -> String {
+    let mut fixes: Vec<&tmark_ir::Fix> =
+        diagnostics.iter().filter_map(|d| d.fix.as_ref()).collect();
+    fixes.sort_by_key(|f| std::cmp::Reverse(f.span.start));
+    let mut out = text.to_string();
+    for fix in fixes {
+        out.replace_range(
+            fix.span.start as usize..fix.span.end as usize,
+            &fix.replacement,
+        );
+    }
+    out
 }

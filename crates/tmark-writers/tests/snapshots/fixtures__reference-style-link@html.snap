@@ -4,6 +4,7 @@ expression: snapshot
 ---
 <p><span id="claim"></span></p>
 <p>See <a href="#claim" class="reference">the claim</a>, not [that][no-such-label].</p>
+<p>The directive <a href="#claim" class="reference"><code>#include</code></a> keeps its code span.</p>
 
 ---requires---
 {

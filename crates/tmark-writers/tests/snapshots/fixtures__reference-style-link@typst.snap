@@ -6,6 +6,8 @@ expression: snapshot
 
 See #link(<claim>)[the claim], not \[that\]\[no-such-label\].
 
+The directive #link(<claim>)[`#include`] keeps its code span.
+
 ---requires---
 {
   "packages": [],

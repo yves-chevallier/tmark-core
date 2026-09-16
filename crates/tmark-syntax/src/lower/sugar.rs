@@ -80,14 +80,25 @@ fn is_id(s: &str) -> bool {
     prefix && rest.all(key)
 }
 
-/// A reference-style link at `at` in `text` (a `[` there). Only the form
-/// CommonMark leaves undefined reaches this scan — a defined one is a
-/// link the tokenizer built — and only where the text is one run, a
-/// label carrying markup never being a single text node. The text is not
-/// empty and does not start the footnote spelling `[^…]`; the id is an
-/// identifier, so `[a][b c]` and the wiki link `[[page]]` are not one;
-/// and a `!` before the bracket is an image reference, which is not a
-/// reference to a label.
+/// The closing half of the spelling, `][id]` at the start of `s`: the id
+/// it names and the byte length of the half. The id is an identifier, so
+/// `[a][b c]` is not a reference and neither is the wiki link `[[page]]`;
+/// the collapsed form `[text][]` names no id and is not one either.
+pub fn reference_tail(s: &str) -> Option<(String, usize)> {
+    let rest = s.strip_prefix("][")?;
+    let end = rest.find(']')?;
+    let id = &rest[..end];
+    is_id(id).then(|| (id.to_string(), end + 3))
+}
+
+/// A reference-style link at `at` in `text` (a `[` there), the text of
+/// which is one run. Only the form CommonMark leaves undefined reaches
+/// this scan — a defined one is a link the tokenizer built. A text
+/// carrying markup is not one text node, and is cut out of the
+/// neighbouring nodes instead (`inline.rs`, `Lowerer::reference_cut`).
+/// The text is not empty and does not start the footnote spelling
+/// `[^…]`; and a `!` before the bracket is an image reference, which is
+/// not a reference to a label.
 pub fn reference_link(text: &str, at: usize) -> Option<Reference> {
     let bytes = text.as_bytes();
     if bytes.get(at) != Some(&b'[') || (at > 0 && bytes[at - 1] == b'!') {
@@ -112,22 +123,11 @@ pub fn reference_link(text: &str, at: usize) -> Option<Reference> {
     if end == start || bytes[start] == b'^' {
         return None;
     }
-    if bytes.get(end + 1) != Some(&b'[') {
-        return None;
-    }
-    let id_start = end + 2;
-    let id_end = id_start + text[id_start..].bytes().take_while(|b| *b != b']').count();
-    if bytes.get(id_end) != Some(&b']') {
-        return None;
-    }
-    let id = &text[id_start..id_end];
-    if !is_id(id) {
-        return None;
-    }
+    let (id, tail) = reference_tail(&text[end..])?;
     Some(Reference {
-        len: id_end + 1 - at,
+        len: end + tail - at,
         text: start..end,
-        id: id.to_string(),
+        id,
     })
 }
 

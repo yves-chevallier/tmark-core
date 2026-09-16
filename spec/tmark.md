@@ -1333,9 +1333,17 @@ reference at all: the node keeps the meaning CommonMark gives it, literal
 text with its brackets, and reports nothing — neither `ref-unresolved`,
 which speaks for `@key`, which has no other reading, nor `deprecated`:
 either would fire on every ordinary sentence that happens to end a
-bracketed aside with a bracketed word. The reading applies to a reference
-whose text is one run of text; a text carrying markup (`[the **trace**][id]`)
-stays what CommonMark makes of it.
+bracketed aside with a bracketed word.
+
+The text may carry inline markup, as it may in the canonical spelling:
+`` [`#include`][cpp:include] `` and `[the **trace**][fig:trace]` are
+references to those labels. What is read is the spelling CommonMark
+leaves undefined and nothing more, so the reading stops wherever
+CommonMark's own would: the whole spelling is verbatim in the source (an
+escaped `\[` or `\]` is the author's bracket), it holds no line end, a
+nearer `[` opens the text instead of a farther one, and a link or an
+image inside the text ends it, a link inside a link being no link at
+all.
 
 #### Cite
 

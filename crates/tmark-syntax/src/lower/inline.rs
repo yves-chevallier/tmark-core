@@ -12,6 +12,7 @@ use tmark_ir::{
 };
 use tmark_markdown::mdast::{Node, TmarkMarkKind};
 use tmark_markdown::tmark::looks_like_attributes;
+use tmark_markdown::unist::{Point, Position};
 
 use super::head::{
     attrs_text, has_attr_colon, parse_attrs, parse_ref_items, parse_role_head, RoleHead,
@@ -54,6 +55,56 @@ fn classify(node: &tmark_markdown::mdast::TmarkBrace) -> BraceKind {
     parse_role_head(&node.value).map_or(BraceKind::Literal, BraceKind::Role)
 }
 
+/// Where a reference-style link with markup in its text sits in the nodes
+/// the tokenizer left it in (`Lowerer::reference_cut`): the text before
+/// its `[`, the pieces of its text, the id, and the text after its `]`.
+/// Each piece carries the decoded value and the position of its source.
+struct Cut {
+    prefix: (String, Position),
+    /// Local offsets of the whole spelling, for the node's span.
+    span: (usize, usize),
+    id: String,
+    /// The text of the opening node that is already the link's.
+    open: Option<(String, Position)>,
+    /// The nodes of the text, before the one that closes the spelling.
+    text: std::ops::Range<usize>,
+    /// The text of the closing node that is still the link's.
+    close: Option<(String, Position)>,
+    suffix: (String, Position),
+    /// Index of the node after the closing one.
+    next: usize,
+}
+
+/// The first `len` bytes of a position, and the rest of it. `len` bytes
+/// from the start, so the cut must be on the position's first line.
+fn split_at(position: &Position, len: usize) -> (Position, Position) {
+    let at = Point::new(
+        position.start.line,
+        position.start.column + len,
+        position.start.offset + len,
+    );
+    let mut head = position.clone();
+    head.end = at.clone();
+    let mut tail = position.clone();
+    tail.start = at;
+    (head, tail)
+}
+
+/// The same, `len` bytes from the *end*: the cut must be on the position's
+/// last line, and the text before it may hold any number of lines.
+fn split_off(position: &Position, len: usize) -> (Position, Position) {
+    let at = Point::new(
+        position.end.line,
+        position.end.column - len,
+        position.end.offset - len,
+    );
+    let mut head = position.clone();
+    head.end = at.clone();
+    let mut tail = position.clone();
+    tail.start = at;
+    (head, tail)
+}
+
 /// Inline lowering result: the inlines and, when the last node was an
 /// attribute list that no inline could host, that list for the block to take
 /// (headings, captions, block quotes).
@@ -72,7 +123,38 @@ impl Lowerer {
             index += 1;
             match node {
                 Node::Text(text) => {
-                    self.lower_text(&text.value, text.position.as_ref(), ctx, &mut out)
+                    // `[text][id]` whose text carries markup (spec §Ref):
+                    // the spelling is cut out of this node, the nodes of
+                    // the text and the node that closes it. What is left
+                    // of that closing node opens the next spelling, so
+                    // two references in a row are both read.
+                    let mut value = text.value.clone();
+                    let mut position = text.position.clone();
+                    while let Some(cut) =
+                        self.reference_cut(&value, position.as_ref(), nodes, index, ctx)
+                    {
+                        self.lower_text(&cut.prefix.0, Some(&cut.prefix.1), ctx, &mut out);
+                        let span = self.span_of(ctx, cut.span.0, cut.span.1);
+                        let meta = self.meta(span);
+                        let mut content = Vec::new();
+                        if let Some((value, position)) = &cut.open {
+                            self.lower_text(value, Some(position), ctx, &mut content);
+                        }
+                        content.extend(self.lower_inlines(&nodes[cut.text.clone()], ctx).inlines);
+                        if let Some((value, position)) = &cut.close {
+                            self.lower_text(value, Some(position), ctx, &mut content);
+                        }
+                        out.push(Inline::Link(Link {
+                            meta,
+                            content,
+                            target: Target::Reference(cut.id),
+                            title: None,
+                        }));
+                        value = cut.suffix.0;
+                        position = Some(cut.suffix.1);
+                        index = cut.next;
+                    }
+                    self.lower_text(&value, position.as_ref(), ctx, &mut out)
                 }
                 Node::Emphasis(n) => {
                     let meta = self.meta_at(ctx, n.position.as_ref());
@@ -370,6 +452,95 @@ impl Lowerer {
             inlines: merge_strs(out),
             tail_attrs,
         }
+    }
+
+    /// A reference-style link `[text][id]` whose text carries markup
+    /// (spec §Ref), cut out of the nodes the tokenizer left it in.
+    ///
+    /// CommonMark defines nothing there, so the brackets stay in the text
+    /// nodes around the text's own nodes: `[`, then `` `#include` ``, then
+    /// `][preprocessor-include]`. `value` and `position` are the text node
+    /// that would open the spelling — what is left of the node that closed
+    /// the previous one, on the second turn — and `from` the index of the
+    /// node after it.
+    ///
+    /// The spelling is read only where it is verbatim in the source and on
+    /// one line: an escaped bracket (`\[`, `\]`) is the author's literal
+    /// text, an `!` before it is an image reference and a `[` inside the
+    /// text is a nearer opener, which CommonMark prefers and which gets
+    /// its own turn. A link, an image or a hard break inside the text ends
+    /// the reading, a link inside a link being no link at all.
+    fn reference_cut(
+        &self,
+        value: &str,
+        position: Option<&Position>,
+        nodes: &[Node],
+        from: usize,
+        ctx: &Ctx,
+    ) -> Option<Cut> {
+        let opening = position?;
+        let source = ctx.slice(Some(opening));
+        // The last `[` of the node opens the text, the way CommonMark
+        // takes the nearest opener; a `]` after it has closed it already.
+        let open = source.rfind('[')?;
+        let (before, after) = (&source[..open], &source[open + 1..]);
+        if before.ends_with('!')
+            || before.bytes().rev().take_while(|b| *b == b'\\').count() % 2 == 1
+            || after.contains(']')
+            || (!after.is_empty() && value != source)
+        {
+            return None;
+        }
+        let mut closing = None;
+        for (offset, node) in nodes[from..].iter().enumerate() {
+            match node {
+                Node::Text(text) => {
+                    let Some(at) = ctx.slice(text.position.as_ref()).find([']', '[']) else {
+                        continue;
+                    };
+                    closing = Some((from + offset, at, text));
+                    break;
+                }
+                Node::Link(_)
+                | Node::LinkReference(_)
+                | Node::Image(_)
+                | Node::ImageReference(_)
+                | Node::FootnoteReference(_)
+                | Node::Break(_) => return None,
+                _ => {}
+            }
+        }
+        let (index, at, closer) = closing?;
+        let closing = closer.position.as_ref()?;
+        let tail = ctx.slice(Some(closing));
+        // A nearer `[` opens the text, the `]` closes no reference, or the
+        // text is empty: CommonMark's reading stands.
+        if tail.as_bytes()[at] == b'[' || (index == from && at == 0 && after.is_empty()) {
+            return None;
+        }
+        let (id, len) = sugar::reference_tail(&tail[at..])?;
+        // A value is its text decoded: the `][id]` is a slice of the
+        // source, what precedes it in the same node only where no escape
+        // shortened it — an escaped `\]` is caught here too.
+        if at > 0 && closer.value != tail {
+            return None;
+        }
+        let (start, end) = (opening.start.offset + open, closing.start.offset + at + len);
+        if ctx.text.get(start..end)?.contains('\n') {
+            return None;
+        }
+        let (prefix, opened) = split_off(opening, source.len() - open);
+        let (closed, suffix) = split_at(closing, at + len);
+        Some(Cut {
+            prefix: (value[..value.len() - after.len() - 1].to_string(), prefix),
+            span: (start, end),
+            id,
+            open: (!after.is_empty()).then(|| (after.to_string(), split_at(&opened, 1).1)),
+            text: from..index,
+            close: (at > 0).then(|| (closer.value[..at].to_string(), split_at(&closed, at).0)),
+            suffix: (closer.value.get(at + len..)?.to_string(), suffix),
+            next: index + 1,
+        })
     }
 
     /// Text with soft breaks split out.

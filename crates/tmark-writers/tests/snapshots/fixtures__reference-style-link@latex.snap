@@ -6,10 +6,17 @@ expression: snapshot
 
 See \hyperref[claim]{the claim}, not [that][no-such-label].
 
+The directive \hyperref[claim]{\tscodeinline{\#include}} keeps its code span.
+
 ---requires---
 {
-  "packages": [],
-  "fragments": [],
+  "packages": [
+    "fvextra",
+    "tcolorbox"
+  ],
+  "fragments": [
+    "ts-code"
+  ],
   "shell_escape": false,
   "assets": [],
   "bibliography": false,

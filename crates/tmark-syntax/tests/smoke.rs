@@ -302,3 +302,49 @@ fn reference_style_links_are_textual_references() {
     );
     assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
 }
+
+#[test]
+fn a_reference_style_link_reads_a_text_that_carries_markup() {
+    // Spec §Ref: the text may carry markup, as it may in `[text](#id)`.
+    // The tokenizer leaves the brackets in the text nodes around it, so
+    // the lowering cuts the spelling out of them — and only where it is
+    // verbatim in the source, on one line, with no nearer `[`, no image
+    // and no link inside.
+    let reference = |md: &str| {
+        let parsed = parse(md, FileId::default());
+        let Block::Para(p) = &parsed.document.blocks[0] else {
+            panic!("{:?}", parsed.document.blocks)
+        };
+        p.content.iter().find_map(|i| match i {
+            Inline::Link(l) if matches!(l.target, tmark_ir::Target::Reference(_)) => {
+                Some((l.target.clone(), tmark_ir::plain_text(&l.content)))
+            }
+            _ => None,
+        })
+    };
+    let target = |id: &str| tmark_ir::Target::Reference(id.to_string());
+    assert_eq!(
+        reference("The [`#include`][cpp:include] directive.\n"),
+        Some((target("cpp:include"), "#include".to_string()))
+    );
+    assert_eq!(
+        reference("See [the *bold* one][opengl] here.\n"),
+        Some((target("opengl"), "the bold one".to_string())),
+        "the text before and after the markup is the link's too"
+    );
+    assert_eq!(
+        reference("Two: [`a`][x] then [`b`][y].\n").map(|(t, _)| t),
+        Some(target("x")),
+        "what closes one spelling opens the next"
+    );
+    // CommonMark's reading stands: a nearer opener wins, and an image
+    // reference, an escaped bracket or a line end is not a reference.
+    assert_eq!(
+        reference("[a [`b`][inner] c][outer]\n"),
+        Some((target("inner"), "b".to_string()))
+    );
+    assert_eq!(reference("![`alt`][img]\n"), None);
+    assert_eq!(reference("[`x` \\][id]\n"), None);
+    assert_eq!(reference("[a\n`b`][id]\n"), None);
+    assert_eq!(reference("[a [b](u) c][id]\n"), None);
+}

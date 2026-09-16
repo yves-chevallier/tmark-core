@@ -8,6 +8,11 @@ link (§Ref), or a literal `[note]` — would otherwise be read as that
 argument (`Missing number, treated as zero`). Typst escapes `[` in markup
 and has no such hazard.
 
+The first cell is the reference-style spelling with a code span in its
+text, which is read as a `Link{Reference}` (§Ref) and, naming no label
+here, renders the brackets CommonMark reads: a cell that opens with `[`
+all the same.
+
 ## input
 
 ```md
@@ -20,10 +25,10 @@ and has no such hazard.
 ## canonical
 
 ```md
-| Directive                           | Role              |
-| ----------------------------------- | ----------------- |
-| [`#include`\][preprocessor-include] | Pastes a file     |
-| [note]                              | A literal bracket |
+| Directive                          | Role              |
+| ---------------------------------- | ----------------- |
+| [`#include`][preprocessor-include] | Pastes a file     |
+| [note]                             | A literal bracket |
 ```
 
 ## ir
@@ -54,16 +59,17 @@ and has no such hazard.
               {
                 "content": [
                   {
-                    "type": "Str",
-                    "text": "["
-                  },
-                  {
-                    "type": "Code",
-                    "text": "#include"
-                  },
-                  {
-                    "type": "Str",
-                    "text": "][preprocessor-include]"
+                    "type": "Link",
+                    "content": [
+                      {
+                        "type": "Code",
+                        "text": "#include"
+                      }
+                    ],
+                    "target": {
+                      "type": "Reference",
+                      "value": "preprocessor-include"
+                    }
                   }
                 ]
               },
