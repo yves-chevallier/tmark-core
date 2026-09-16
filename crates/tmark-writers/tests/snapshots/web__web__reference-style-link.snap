@@ -4,4 +4,4 @@ expression: snapshot
 ---
 [](){#claim}
 
-See [the claim][claim], not [that][no-such-label].
+See [the claim](#claim), not [that][no-such-label].

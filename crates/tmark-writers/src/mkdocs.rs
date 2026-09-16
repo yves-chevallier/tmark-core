@@ -20,7 +20,7 @@ use tmark_fmt::{edit_many, print_node_with, NodeEdit, Profile, Replacement};
 use tmark_ir::{
     plain_text, registry, Admonition, Aside, Block, Caption, CaptionKind, Cell, CodeBlock, Column,
     Diagnostic, Document, Figure, Image, Inline, Meta, NodeId, NodeRef, Ref, RefItem, Row, Side,
-    Span, SpanNode, Table, Var,
+    Span, SpanNode, Table, Target, Var,
 };
 use tmark_registry::{join, Loader, Resolution, Resolved};
 
@@ -1228,6 +1228,7 @@ impl<'a> Lowerer<'a> {
         }
         match inline {
             Inline::Ref(r) => Some(self.reference(f, r)),
+            Inline::Link(l) => self.link(f, l),
             Inline::CounterItem(c) => {
                 let id = format!("{}:{}", c.prefix, c.key);
                 let number = self
@@ -1441,6 +1442,44 @@ impl<'a> Lowerer<'a> {
             .min_by_key(|r| r.span.file != f.doc.file)
             .map(|r| r.resolution.clone())
             .unwrap_or(Resolution::Unresolved)
+    }
+
+    /// A link to an anchor, `[text](#id)`, and its deprecated
+    /// reference-style spelling `[text][id]` (spec §Ref).
+    ///
+    /// A same-page anchor keeps its bytes: `#id` is exactly what the
+    /// rendered page answers to. A label that lives on another document of
+    /// the book is spliced with that document's location —
+    /// `[text](other-page.md#id)` — the way `@id` is lowered, so the site
+    /// resolves a cross-page reference from the site map and owes
+    /// `mkdocs-autorefs` nothing. The reference-style spelling is rewritten
+    /// canonically in both cases: `[text][id]` is brackets to a plain
+    /// CommonMark parser, and the lowering owes the site Markdown any
+    /// parser understands. Where it names no label it is literal text and
+    /// keeps its bytes.
+    fn link(&mut self, f: &File, l: &tmark_ir::Link) -> Option<String> {
+        let (key, reference_style) = match &l.target {
+            Target::Anchor(id) => (id, false),
+            Target::Reference(id) => (id, true),
+            Target::Url(_) | Target::Document(_) => return None,
+        };
+        let destination = match self.lookup(f, l.meta.id, key) {
+            Resolution::Label { .. } if !reference_style => return None,
+            Resolution::Label { .. } => format!("#{key}"),
+            Resolution::Sibling { label, location } => {
+                if l.content.is_empty() {
+                    return Some(format!(
+                        "[{}]({})",
+                        link_text(&label),
+                        destination(&location)
+                    ));
+                }
+                destination(&location)
+            }
+            _ => return None,
+        };
+        let text = self.inlines_text(f, &l.content);
+        Some(format!("[{}]({destination})", link_text(&text)))
     }
 
     /// `@…` in the spellings of the per-construct table.

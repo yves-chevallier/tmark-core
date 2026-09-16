@@ -211,11 +211,17 @@ replacement text is:
   page and returned alone in `Lowered.bibliography`, or Pandoc `[@key]`
   with `citations: Passthrough` — `@key` (Pandoc's narrative form) for a
   `+key` item and, under the front matter's `citations.narrative`, for a
-  bare key; `WebOptions` has no override. The reference-style
-  `[text][id]` (spec §Ref) is the one reference the lowering leaves
-  byte for byte: it is already Markdown a site resolves, and
-  `mkdocs-autorefs` knows which page holds the anchor, which this
-  page does not;
+  bare key; `WebOptions` has no override;
+- `[text](#id)` and the deprecated `[text][id]` (spec §Ref): a same-page
+  anchor keeps its bytes — `#id` is what the rendered page answers to —
+  and a label the resolution places on a sibling page is spliced with
+  that page's location, `[text](other-page.md#id)`, exactly as `@id` is.
+  That is what retires `mkdocs-autorefs` from the site: the lowering
+  knows the site map, the browser does not. The reference-style spelling
+  is rewritten canonically in both cases, since a plain CommonMark parser
+  reads brackets there and the site is owed Markdown any parser
+  understands; a key that is no label keeps its bytes, being literal
+  text;
 - `!!! type cls "title"` (`???`, `???+` when `collapsed`) for a `:::`
   callout the `!!!` line can carry, its body re-indented by `Out`;
 - the lowered text of the included file for `{include}(f)` (its

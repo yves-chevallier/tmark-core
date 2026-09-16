@@ -600,3 +600,32 @@ fn localised_words_and_css_prefix() {
         lowered.text
     );
 }
+
+/// `[text](#id)`, the canonical textual reference, and the deprecated
+/// `[text][id]` (spec §Ref). A same-page anchor keeps its bytes: `#id` is
+/// what the rendered page answers to. A label of a sibling document is
+/// spliced with that page's location, the way `@id` is, so the site
+/// resolves the cross-page link from the site map and needs no
+/// `mkdocs-autorefs`. The deprecated spelling is written canonically in
+/// both cases — a plain CommonMark parser reads brackets there, not a
+/// link — and a key that is no label keeps its bytes, being literal text.
+#[test]
+fn an_anchor_link_to_a_sibling_label_is_spliced() {
+    let text = "# Intro {#sec:intro}\n\nSee [here](#sec:intro), [there](#sec:other), [here too][sec:intro],\n[there too][sec:other], [](#sec:other) and [prose][nothing].\n";
+    let options = ResolveOptions {
+        book: vec![BookLabel {
+            key: "sec:other".into(),
+            prefix: Some("sec".into()),
+            number: None,
+            kind: Host::Header,
+            title: Some("The other page".into()),
+            location: "other.md#sec:other".into(),
+        }],
+        ..site_options("index.md")
+    };
+    let lowered = lower_with(text, &MemoryLoader::new(), options, &WebOptions::default());
+    assert_eq!(
+        lowered.text,
+        "# Intro {#sec:intro}\n\nSee [here](#sec:intro), [there](other.md#sec:other), [here too](#sec:intro),\n[there too](other.md#sec:other), [The other page](other.md#sec:other) and [prose][nothing].\n"
+    );
+}
