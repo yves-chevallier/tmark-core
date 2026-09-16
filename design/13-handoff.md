@@ -1,8 +1,120 @@
 # 13 — Handoff notes
 
-Four handoffs, newest first. Read `AGENTS.md`, then this file, then
+Five handoffs, newest first. Read `AGENTS.md`, then this file, then
 `11-roadmap.md`, then `design/reviews/`. Everything below is opinion from
 the inside of the work: verify it, do not trust it.
+
+## The fragment-spans round (2026-09-16, second Zensical wave)
+
+Branch `autorefs-anchors`, on top of the round below. The handbook's
+`NOTES-zensical.md` §8 lists nine defects of that wave; three were the
+core's and are fixed here, one commit each.
+
+- **A counter in a `!!!` title spliced at column 0** (`b9020ef`, C66).
+  `!!! exercise "#(ex:un) : T"` lowered to `<span
+  class="ts-counter">Exercice 1</span>cise "#(ex:un) : T"`. The title is
+  parsed out of a string the tokenizer hands over whole, and
+  `lower_fragment` anchored every node of it at the *block*, so the
+  node's span was the marker line's first bytes. `parse_admonition_info`
+  now returns the title with its offset in the info string,
+  `head::attr_value_offset` locates an attribute value no escape
+  decodes, and `Lowerer::attr_value_span` turns either into the span of
+  the value itself. The `::: kind {title="…"}` form had the same wrong
+  spans and only looked healthy because the writer's "are these the
+  text's spans" test rejected them and printed each node instead.
+  Second half of the same bug: PyMdownX reads a title up to the next
+  `"`, so a `!!!` source whose title lowers to something holding a `"`
+  or a newline — a counter, a reference — now gets the
+  `<div class="admonition …">` wrapper the `:::` form already got,
+  instead of a marker line no extension can parse. Fixture
+  `container-admonition-title`, plus the `!!!` case in `tests/web.rs`
+  (`ROWS`, which had to become a `r##"…"##` literal: `"#` ends `r#"`).
+- **A code span in a `yaml table` cell rendered as the fence line**
+  (`c9b81d8`, C66 as well). Same class: the cells were anchored at the
+  fence, so `` "`+`" `` carried the span of ```` ``` ```` and the
+  writer sliced that back. A cell is now located in the payload by its
+  **single** occurrence there (`table::Payload::locate`) and carries the
+  spans of that slice; a cell the payload does not spell verbatim (a
+  YAML escape, a folded scalar, two cells reading the same) keeps the
+  fence as its span. As a second line of defence `inlines_text` also
+  checks that a `Code` and a `Math` read back from their span, so the
+  fallback prints the node. Fixture `fence-yaml-table-markup`.
+- **An `_` in a label reached `\hyperref[a\_b]`** (`39f4d9c`, C67). The
+  LaTeX writer escaped a label *name* with the prose escaper.
+  `escape::label` replaces `escape::escape` at every site that prints a
+  name — `\label`, `\ref`, `\pageref`, `\hyperref`, the figure, table
+  and equation labels, `\tsgls`, the `id=` key of `tscode` and
+  `tscallout` — and maps only the nine characters that break the reading
+  of a brace argument or of a `\csname` (`\ { } # % ~ ^ $` and a
+  blank), each to `+` and a letter with `+` doubled, so the mapping is
+  injective. Fixture `anchor-label-name`.
+
+What the spec gained: §Round-trip and source spans now says what the
+spans of a fragment are, and what they are when the fragment has no
+source of its own (the construct's span, so a tool prints the node
+rather than slicing the file). Design 07 gained the label-name rule.
+
+Measured on this branch: `cargo fmt --all --check`, `cargo clippy
+--workspace --all-targets -- -D warnings`, `cargo test --workspace`
+clean; schema, registries and the Python stub regenerate with no drift;
+`crates/tmark-py/tests` 50 passed after `maturin develop`. TeXSmith `uv
+run pytest -q` 1504 passed; `scripts/parity.py baseline --check`
+249/251 identical, the two that differ being another agent's prose edit
+to `docs/syntax/code.md` in the working tree — **no writer output of the
+corpus moved**, because no label of it holds an `_` (checked with a
+`grep` over `tests/parity/baseline`). On the handbook, `texsmith site
+build --no-pdf` and `zensical build -c` both report no issue, and the
+built `.tex` holds **0** `\hyperref[…\_…]`, `\label{…\_…}` and
+`id=…\_…` — it held 0 before this round too, because the handbook had
+already renamed `twos_complement` → `twos-complement` to work around the
+bug; on a copy of `docs/course-c/10-numeration/numbers.md` with the
+underscore put back, the writer now emits `\label{twos_complement}`, so
+those anchors can be renamed back.
+
+### The cross-repository contract (additions this round)
+
+- **Label names in LaTeX changed shape.** Anything on TeXSmith's side
+  that builds a label name itself, or that matches the writer's output,
+  must use the same rule: leave `_ - . : &` alone, map `\ { } # % ~ ^ $`
+  and blanks to `+`+letter, `+` to `++`. The one visible move in the
+  existing corpus is a *space* in an anchor: `#h i` was
+  `\hyperref[h i]`, it is now `\hyperref[h+si]` (fixture
+  `link-destination-escapes`). Nothing else in the parity baseline moved.
+- **`\newacronym` is TeXSmith's and is not covered.** The core prints
+  `\tsgls{key}` and `\tsacr{key}` through the new rule; the declaration
+  that must match them is written by `ts-glossary` from the front
+  matter. A glossary key that is not csname-safe (`k&r`, item 7 of the
+  handbook notes) therefore stays TeXSmith's bug: `&` ends a key in the
+  TMark grammar, so no document can *write* one — it can only be
+  declared in the front matter, and the same mapping belongs in the
+  Python that emits `\newacronym`. The core's `\tsacr` key is a slug
+  (`text::acronym_key`) and needs nothing.
+- **`lower_web` now writes a `<div class="admonition …" markdown="1">`
+  where it used to leave a `!!!` line**, but only when the title lowers
+  to something holding a `"` or a newline. A `!!!` callout with a plain
+  title is still left byte for byte. Anything diffing lowered pages
+  against a recorded artifact must re-record those pages.
+- **Node spans moved for fragments.** An admonition title, an attribute
+  value and a `yaml table` cell now carry spans of the file where they
+  can. A consumer that assumed those spans were meaningless, or that
+  they all pointed at the construct, sees real ones; a consumer that
+  slices the file at a node's span gets the node, not the construct.
+  The IR schema is unchanged.
+
+### Known and left
+
+- The `<p class="admonition-title">` the profile writes carries no
+  `markdown` attribute, so Markdown *inside* a rewritten title (an
+  `*emphasis*`, not a counter, which is already HTML) does not render on
+  the site. `<figcaption markdown="span">` and `<th markdown="span">`
+  in the same file suggest the fix is one attribute, but it was not
+  verified against the installed extension set and would move every
+  callout of the corpus, so it was left. Check it against Material
+  before changing it.
+- `Payload::locate` refuses a cell the payload spells twice, so two
+  identical cells of a `yaml table` fall back to the fence span. The
+  fallback is correct, not exact: a forward-scanning cursor would place
+  them, at the cost of trusting YAML document order.
 
 ## The Zensical-corpus round (2026-09-16)
 
