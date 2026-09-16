@@ -1,11 +1,12 @@
 # Internal tokenizer failure: the document stays a document
 
-AGENTS.md: "parsing never fails". markdown-rs 1.0.0 panics in `to_mdast`
-on an unclosed fence inside a list item followed by a list of another
-kind (`- ```h` then `1. i`; `to_html` does not). Until the vendored
-tokenizer is fixed, the parser catches the failure, keeps the text as one
-paragraph and reports `parse-internal` (an error: the printer refuses to
-format such a file).
+AGENTS.md: "parsing never fails". markdown-rs 1.0.0 cannot close the
+construct it opened on an unclosed fence inside a list item followed by
+a list of another kind (`- ```h` then `1. i`; `to_html` does not), and
+called that unreachable. The vendored tokenizer returns the mismatch as
+an error, and the parser — which also catches a panic, for the failures
+it does not know — keeps the text as one paragraph and reports
+`parse-internal` (an error: the printer refuses to format such a file).
 
 ## input
 

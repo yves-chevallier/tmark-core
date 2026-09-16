@@ -2126,9 +2126,23 @@ fn on_mismatch_error(
                 }
             );
         }
-        unreachable!("mismatched (non-jsx): {:?} / {:?}", left.name, right.name);
-    } else {
-        unreachable!("mismatched (non-jsx): document / {:?}", right.name);
+        return Err(mismatch(&format!("{:?}", left.name), right));
+    }
+    Err(mismatch("the document", right))
+}
+
+/// A mismatch that is not a JSX tag's: the tokenizer closed a construct
+/// that is not the open one. markdown-rs 1.0.0 reaches this on an
+/// unclosed fence in a list item followed by a list of another kind
+/// (`- ```h` then `1. i`) and called it unreachable; it is an error
+/// instead, so that the caller reports `parse-internal` and parsing
+/// never panics (AGENTS.md, "errors are values").
+fn mismatch(open: &str, right: &Event) -> message::Message {
+    message::Message {
+        place: Some(Box::new(message::Place::Point(right.point.to_unist()))),
+        reason: format!("Cannot close `{:?}`: `{open}` is open", right.name),
+        rule_id: Box::new("end-tag-mismatch".into()),
+        source: Box::new("markdown-rs".into()),
     }
 }
 
