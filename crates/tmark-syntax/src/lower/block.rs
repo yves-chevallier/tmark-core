@@ -1412,10 +1412,6 @@ fn shift_stops(stops: &[(usize, usize)], skip: usize) -> Vec<(usize, usize)> {
     out
 }
 
-/// The opening tag of an `md_in_html` block: `<tag attr… markdown>` on
-/// one line, the `markdown` attribute bare or valued (`markdown="1"`,
-/// `"block"`, `"span"`). Returns the tag name and the attribute list built
-/// from `id` and `class`; other attributes are kept as keys.
 /// The option lines of a `pymdownx.blocks` fence: indented `key: value`
 /// YAML right after the opening line. Returns their byte length in the
 /// body and the attribute list the `attrs:` mapping carries.
@@ -1534,6 +1530,10 @@ fn put(attrs: &mut Attrs, name: &str, value: String) {
     }
 }
 
+/// The opening tag of an `md_in_html` block: `<tag attr… markdown>` on
+/// one line, the `markdown` attribute bare or valued (`markdown="1"`,
+/// `"block"`, `"span"`). Returns the tag name and the attribute list built
+/// from `id` and `class`; other attributes are kept as keys.
 fn markdown_tag(line: &str) -> Option<(String, Attrs)> {
     let line = line.trim();
     let inner = line.strip_prefix('<')?.strip_suffix('>')?;

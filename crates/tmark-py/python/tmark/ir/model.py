@@ -1,6 +1,6 @@
 """The tmark IR as Python dataclasses, generated from the IR schema. Do not edit.
 tmark version: 0.1.0
-schema sha256: 86dc1151cdb0be1169db5939b515418919eee169c4b2ff1cd1e3d32bfed2b13b
+schema sha256: 85372b17b17ef62bbc6ea1f86db2989a3b7a65ce80166a3e662400199316536d
 
 Regenerate with ``crates/tmark-py/scripts/gen_ir_models.py`` (``--check`` in CI).
 Every node is a
@@ -15,7 +15,7 @@ from enum import Enum
 from typing import Any, ClassVar, Final, Literal, NamedTuple, TypeAlias
 
 TMARK_VERSION: Final = '0.1.0'
-SCHEMA_HASH: Final = '86dc1151cdb0be1169db5939b515418919eee169c4b2ff1cd1e3d32bfed2b13b'
+SCHEMA_HASH: Final = '85372b17b17ef62bbc6ea1f86db2989a3b7a65ce80166a3e662400199316536d'
 
 #: A JSON value the schema leaves untyped (front-matter blobs).
 JsonValue: TypeAlias = Any
@@ -350,7 +350,7 @@ class Emph(Inline):
 
 @dataclass(frozen=True, slots=True)
 class Epigraph(Record):
-    """Spec §BlockQuote: `epigraph: {quote, source}` placed before the first heading."""
+    """Spec §BlockQuote: `epigraph: {quote, source}`, the document's epigraph as plain text. The key says what the epigraph is, never where it goes: no writer reads it, and a consumer that decides where an epigraph belongs splices a `> {.epigraph}` quote there itself."""
 
     quote: str
     source: str | None = None

@@ -138,8 +138,10 @@ impl<'de> Deserialize<'de> for Author {
     }
 }
 
-/// Spec §BlockQuote: `epigraph: {quote, source}` placed before the first
-/// heading.
+/// Spec §BlockQuote: `epigraph: {quote, source}`, the document's
+/// epigraph as plain text. The key says what the epigraph is, never
+/// where it goes: no writer reads it, and a consumer that decides where
+/// an epigraph belongs splices a `> {.epigraph}` quote there itself.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Epigraph {
     pub quote: String,

@@ -140,15 +140,7 @@ impl Latex<'_> {
     /// `\LaTeXe{}` are the kernel's, the others `\tslogo{Name}` of
     /// `ts-typesetting`.
     fn prose(&mut self, text: &str) {
-        // A hard line break is `\\`, which scans for an optional
-        // `[⟨dimen⟩]` across the line end: a text run that opens with `[`
-        // right after one would be read as that argument. An empty group
-        // stops the scan; outside a table nothing here has to be the
-        // first token of its cell, so the guard goes on the command side
-        // (`escape::guard_bracket` does the cell side).
-        if text.starts_with('[') && self.out.ends_with("\\\\") {
-            self.out.push("{}");
-        }
+        self.guard_break(text);
         if !self.tex_logos {
             self.out.push(&escape::prose(text));
             return;
@@ -239,6 +231,7 @@ impl Latex<'_> {
                 if refs::refers(self.res, n.meta.id, key) {
                     self.anchor(n, key);
                 } else {
+                    self.guard_break("[");
                     self.out.push("[");
                     self.inlines(&n.content);
                     self.out.push(&format!("][{}]", escape::prose(key)));
@@ -247,6 +240,19 @@ impl Latex<'_> {
             Target::Document(_) => self.inlines(&n.content),
         }
         self.out.end(n.meta.id);
+    }
+
+    /// A `[` that opens what is about to be written, right after a hard
+    /// line break, is brace-protected: `\\` scans for an optional
+    /// `[⟨dimen⟩]` across the line end and would read it as that argument
+    /// (design 07 §Decisions). An empty group stops the scan; outside a
+    /// table nothing written here has to be the first token of its cell,
+    /// so the guard goes on the command side — `escape::guard_bracket`
+    /// does the cell side, where it may not.
+    fn guard_break(&mut self, text: &str) {
+        if text.starts_with('[') && self.out.ends_with("\\\\") {
+            self.out.push("{}");
+        }
     }
 
     /// A link to an anchor of the document: `\ref` when it carries no
@@ -423,7 +429,9 @@ impl Latex<'_> {
                 }
                 Resolution::Citation { .. } => unreachable!("handled above"),
                 Resolution::Ambiguous | Resolution::Unresolved => {
-                    self.out.push(&escape::prose(&refs::unresolved(&item.key)));
+                    let text = escape::prose(&refs::unresolved(&item.key));
+                    self.guard_break(&text);
+                    self.out.push(&text);
                 }
             }
             if let Some(suffix) = &item.suffix {

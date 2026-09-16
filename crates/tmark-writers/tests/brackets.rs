@@ -56,3 +56,14 @@ fn a_text_run_after_a_hard_break_that_opens_with_a_bracket_is_guarded() {
     // Nothing is added where no break precedes.
     assert!(body("[note] two\n", Backend::Latex).starts_with("[note] two"));
 }
+
+#[test]
+fn what_a_node_opens_with_a_bracket_is_guarded_after_a_break_too() {
+    // Not only a text run: an unresolved `@key` and an unresolved
+    // reference-style link (spec §Ref) both open with `[`, and the `\\`
+    // before them scans past the line end all the same.
+    let latex = body("one  \n@fig:nope two\n", Backend::Latex);
+    assert!(latex.contains("one\\\\\n{}[?fig:nope] two"), "{latex}");
+    let latex = body("one  \n[prose][nothing] two\n", Backend::Latex);
+    assert!(latex.contains("one\\\\\n{}[prose][nothing] two"), "{latex}");
+}

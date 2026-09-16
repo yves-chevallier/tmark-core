@@ -454,9 +454,12 @@ and options, §2 the LaTeX catalogue, §4 Typst math), the contract names of
   (`escaper.py:223`, latent bug reproduced for parity; fix both sides).
 - HTML `id`s on headings only when written; auto-slugs are LaTeX/Typst
   labels only (open question b: `python-slugify` on the plain text).
-- A `[` that opens a LaTeX table cell, a column name or a text run right
-  after a hard line break is brace-protected (`{[}`, `latex/escape.rs`
-  `guard_bracket`; fixture `table-cell-bracket`, `tests/brackets.rs`).
+- A `[` that opens a LaTeX table cell, a column name, or anything
+  written right after a hard line break — a text run, an unresolved
+  `@key` (`[?key]`), an unresolved reference-style link — is
+  brace-protected (`{[}`, `latex/escape.rs` `guard_bracket`, and
+  `Latex::guard_break` on the command side; fixture
+  `table-cell-bracket`, `tests/brackets.rs`).
   Every command that can stand there takes an optional argument and looks
   for it with `\@ifnextchar[`, which skips spaces *and* line ends: the
   row break `\\[⟨dimen⟩]`, booktabs' `\toprule`/`\midrule`/`\bottomrule`

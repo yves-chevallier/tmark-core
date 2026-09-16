@@ -1465,7 +1465,16 @@ impl<'a> Lowerer<'a> {
         };
         let destination = match self.lookup(f, l.meta.id, key) {
             Resolution::Label { .. } if !reference_style => return None,
-            Resolution::Label { .. } => format!("#{key}"),
+            // The label *as declared*, the way `@key` is lowered: TMark
+            // matches a key case-insensitively and an HTML `id` does not,
+            // so `[x][claim]` must address the `{#Claim}` that is there.
+            Resolution::Label { .. } => format!(
+                "#{}",
+                self.res
+                    .labels
+                    .get(key)
+                    .map_or(key.as_str(), |l| l.id.as_str())
+            ),
             Resolution::Sibling { label, location } => {
                 if l.content.is_empty() {
                     return Some(format!(

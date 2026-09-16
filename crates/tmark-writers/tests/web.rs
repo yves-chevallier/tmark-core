@@ -629,3 +629,16 @@ fn an_anchor_link_to_a_sibling_label_is_spliced() {
         "# Intro {#sec:intro}\n\nSee [here](#sec:intro), [there](other.md#sec:other), [here too](#sec:intro),\n[there too](other.md#sec:other), [The other page](other.md#sec:other) and [prose][nothing].\n"
     );
 }
+
+/// TMark matches a label key case-insensitively; an HTML `id` is not.
+/// The reference-style spelling therefore addresses the label as it is
+/// *declared*, the way `@key` is lowered.
+#[test]
+fn a_reference_style_link_addresses_the_label_as_declared() {
+    let md = "[](){#Claim}\n\nSee [the claim][claim].\n";
+    assert!(
+        lower(md).text.contains("See [the claim](#Claim)."),
+        "{}",
+        lower(md).text
+    );
+}
