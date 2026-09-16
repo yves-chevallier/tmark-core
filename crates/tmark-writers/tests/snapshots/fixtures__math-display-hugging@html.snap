@@ -1,0 +1,23 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+<p>Avant.</p>
+<div class="math display">\[\left\{ \begin{matrix}
+x = 0 \\
+y = y_{0}
+\end{matrix} \right.\]</div>
+<p>Après.</p>
+
+---requires---
+{
+  "packages": [],
+  "fragments": [],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

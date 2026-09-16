@@ -1,0 +1,14 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+Avant.
+
+$$
+\left\{ \begin{matrix}
+x = 0 \\
+y = y_{0}
+\end{matrix} \right.
+$$
+
+Après.

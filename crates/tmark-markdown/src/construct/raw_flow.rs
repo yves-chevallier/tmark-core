@@ -145,7 +145,7 @@ use crate::tokenizer::Tokenizer;
 use crate::util::{
     constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, MATH_FLOW_SEQUENCE_SIZE_MIN, TAB_SIZE},
     slice::{Position, Slice},
-    tmark::{line_end, looks_like_attributes},
+    tmark::{line_end, looks_like_attributes, math_closes_line},
 };
 
 /// Start of raw.
@@ -684,6 +684,23 @@ pub fn content_chunk(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') => {
             tokenizer.exit(tokenizer.tokenize_state.token_6.clone());
             State::Retry(StateName::RawFlowBeforeContentChunk)
+        }
+        // TMark: a display closes on the line it ends
+        // (`\end{matrix} \right.$$`, spec §Math (display)). Code fences
+        // keep the CommonMark rule: only a line of their own closes them.
+        Some(b'$')
+            if tokenizer.tokenize_state.marker == b'$'
+                && math_closes_line(
+                    tokenizer.parse_state.bytes,
+                    tokenizer.point.index,
+                    tokenizer.tokenize_state.size,
+                    tokenizer.parse_state.options.constructs.tmark_brace,
+                ) =>
+        {
+            tokenizer.exit(tokenizer.tokenize_state.token_6.clone());
+            tokenizer.attempt(State::Next(StateName::RawFlowAfter), State::Nok);
+            tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
+            State::Retry(StateName::RawFlowBeforeSequenceClose)
         }
         _ => {
             tokenizer.consume();

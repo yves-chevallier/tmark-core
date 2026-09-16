@@ -9,6 +9,7 @@ use tmark_ir::{
     OrderedList, Para, RawBlock, Span, Table, TableConfig, Task,
 };
 use tmark_markdown::mdast::Node;
+use tmark_markdown::tmark::looks_like_attributes;
 
 use super::head::{
     attrs_text, has_attr_colon, parse_admonition_info, parse_attrs, parse_container_info,
@@ -182,9 +183,18 @@ impl Lowerer {
                     Some(base) => self.relocate_attrs(ctx, &mut attrs, base),
                     None => attrs.id_span = None,
                 }
+                // `$$\left\{ …` — a display may start on the fence line
+                // (spec §Math (display)); the tokenizer keeps that
+                // remainder out of the content, as the fence meta.
+                let head = math_head(ctx.slice(math.position.as_ref()));
+                let text = match (head.is_empty(), math.value.is_empty()) {
+                    (true, _) => math.value.clone(),
+                    (false, true) => head.to_string(),
+                    (false, false) => format!("{head}\n{}", math.value),
+                };
                 out.push(Item::Block(Block::MathBlock(MathBlock {
                     meta,
-                    text: math.value.clone(),
+                    text,
                     attrs,
                 })));
             }
@@ -1348,6 +1358,25 @@ fn is_caption(content: &[Inline]) -> Option<(CaptionKind, usize)> {
 /// Blocks a caption can attach to (`Block::is_float`, spec §Caption).
 fn is_float(block: &Block) -> bool {
     block.is_float()
+}
+
+/// The math a display fence carries on its own line: what follows the
+/// opening `$$` in `source`, the whole block's text (spec §Math (display)).
+/// Empty when the fence line holds nothing else, or when what it holds is
+/// the attribute list (`$$ {#eq:x}`), which the fence meta already parsed.
+fn math_head(source: &str) -> &str {
+    let head = source.trim_start_matches([' ', '\t']);
+    let head = head.trim_start_matches('$');
+    let head = match head.find('\n') {
+        Some(at) => &head[..at],
+        None => head,
+    };
+    let head = head.trim();
+    let attributes = looks_like_attributes(head.as_bytes(), 0) && head.ends_with('}');
+    match attributes {
+        true => "",
+        false => head,
+    }
 }
 
 /// An attribute list left as a trailing literal `{…}` by the inline lowering

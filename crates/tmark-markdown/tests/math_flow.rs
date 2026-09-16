@@ -255,6 +255,33 @@ fn math_flow() -> Result<(), message::Message> {
         "should not support lazyness (3)"
     );
 
+    // TMark: a display closes on the line it ends (spec §Math (display));
+    // a corpus written for Pandoc or `python-markdown-math` hugs its
+    // fences.
+    assert_eq!(
+        to_html_with_options("$$\na\nb$$\nc", &math)?,
+        "<pre><code class=\"language-math math-display\">a\nb\n</code></pre>\n<p>c</p>",
+        "should close a display on a line that ends with the fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("> $$\n> a\n> b$$\n\nc", &math)?,
+        "<blockquote>\n<pre><code class=\"language-math math-display\">a\nb\n</code></pre>\n</blockquote>\n<p>c</p>",
+        "should close a hugging display inside a container"
+    );
+
+    assert_eq!(
+        to_html_with_options("$$$\naaa\nb$$\n", &math)?,
+        "<pre><code class=\"language-math math-display\">aaa\nb$$\n</code></pre>\n",
+        "should not close on a hugging fence shorter than the opening one"
+    );
+
+    assert_eq!(
+        to_html_with_options("```\na\nb```\nc", &math)?,
+        "<pre><code>a\nb```\nc\n</code></pre>\n",
+        "should not close code (fenced) on the line it ends: the rule is math's"
+    );
+
     assert_eq!(
         to_mdast("$$extra\nabc\ndef\n$$", &math.parse)?,
         Node::Root(Root {

@@ -1704,7 +1704,13 @@ From @eq:pythagoras we conclude…
 
 Equations have an anchor but no caption line; print never captions them.
 A one-line display, `$$x$$ {#eq:a}`, is accepted with the same attribute
-position and printed on three lines (challenge C13). Compatibility:
+position and printed on three lines (challenge C13). The fences may hug the
+math, as Pandoc and `python-markdown-math` write it: a display closes on
+the first line that *ends* with its `$$` (its attribute list apart), and
+what the opening `$$` carries on its own line is the first line of the
+math, so `$$\left\{ … \right.$$` over four lines is one display
+(challenge C70). A `$$` alone on its line keeps the fence rules of a code
+block: indented by four spaces it is math, not a fence. Compatibility:
 `\begin{equation}\label{eq:x}…` inside `$$` and `$\eqref{…}$` keep working
 (class D, LaTeX-flavoured).
 

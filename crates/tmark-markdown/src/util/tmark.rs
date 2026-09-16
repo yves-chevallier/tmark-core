@@ -95,3 +95,52 @@ pub fn line_end(bytes: &[u8], mut index: usize) -> usize {
     }
     index
 }
+
+/// Whether the display-math fence at `index` closes its block at the end of
+/// a content line (spec §Math (display); Pandoc and `python-markdown-math`
+/// spell a display as `$$…$$`, the closing fence hugging the last line:
+/// `\end{matrix} \right.$$`).
+///
+/// True when `bytes[index]` starts a run of at least `size` `$`, followed
+/// by, up to the end of the line, only blanks and at most one attribute
+/// list (`$$ {#eq:x}`), *and* the line already holds content: a `$$` alone
+/// on its line is the ordinary closing fence, which the fence states
+/// handle — including their indent rules (four spaces is content, not a
+/// fence).
+pub fn math_closes_line(bytes: &[u8], index: usize, size: usize, attributes: bool) -> bool {
+    // Content before it on this line?
+    let mut before = index;
+    loop {
+        if before == 0 {
+            return false;
+        }
+        before -= 1;
+        match bytes[before] {
+            b'\n' => return false,
+            b' ' | b'\t' => {}
+            _ => break,
+        }
+    }
+    let mut i = index;
+    let mut dollars = 0;
+    while bytes.get(i) == Some(&b'$') {
+        i += 1;
+        dollars += 1;
+    }
+    if dollars < size {
+        return false;
+    }
+    while matches!(bytes.get(i), Some(b' ' | b'\t')) {
+        i += 1;
+    }
+    let end = line_end(bytes, i);
+    if attributes && looks_like_attributes(bytes, i) {
+        if let Some(offset) = bytes[i..end].iter().position(|b| *b == b'}') {
+            i += offset + 1;
+            while matches!(bytes.get(i), Some(b' ' | b'\t')) {
+                i += 1;
+            }
+        }
+    }
+    i == end
+}

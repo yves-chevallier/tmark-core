@@ -1,0 +1,27 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+Avant.
+
+#mitex(`\left\{ \begin{matrix}
+x = 0 \\
+y = y_{0}
+\end{matrix} \right.`)
+
+Après.
+
+---requires---
+{
+  "packages": [
+    "@preview/mitex:0.2.7"
+  ],
+  "fragments": [],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}
