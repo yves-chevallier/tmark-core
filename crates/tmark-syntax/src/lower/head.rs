@@ -3,7 +3,7 @@
 //! admonition info. Spec §Lexical grammar.
 
 use tmark_ir::{Attrs, RefItem, SubSpan};
-use tmark_markdown::tmark::{is_ident_byte, is_ident_start};
+use tmark_markdown::tmark::{is_ident_byte, is_ident_start, looks_like_attributes};
 
 /// Splits `s` into whitespace-separated tokens, keeping `"…"` values
 /// whole; inside quotes a backslash protects the next character (spec
@@ -422,25 +422,57 @@ pub fn parse_container_info(info: &str) -> (String, Option<Attrs>, bool) {
     (name.to_string(), attrs, valid)
 }
 
-/// Splits `type class… "Title"` of a PyMdownX admonition. The title comes
-/// with its byte offset in `info`: it is a verbatim slice of the marker
-/// line, so what is parsed from it carries spans of the file (spec
-/// §Round-trip and source spans).
-pub fn parse_admonition_info(info: &str) -> (String, Vec<String>, Option<(String, usize)>) {
+/// The head of a PyMdownX admonition, `type class… "Title" {attrs}`.
+#[derive(Debug, Default)]
+pub struct AdmonitionInfo {
+    /// The callout type; the first word of the head.
+    pub kind: String,
+    /// The bare words after it, PyMdownX classes (`inline end`).
+    pub classes: Vec<String>,
+    /// The quoted title, with its byte offset in the info.
+    pub title: Option<(String, usize)>,
+    /// The attribute list, with the byte offset of its inside in the info.
+    pub attrs: Option<(Attrs, usize)>,
+}
+
+/// Splits `type class… "Title" {attrs}` of a PyMdownX admonition. The title
+/// and the attribute list come with their byte offset in `info`: they are
+/// verbatim slices of the marker line, so what is parsed from them carries
+/// spans of the file (spec §Round-trip and source spans).
+pub fn parse_admonition_info(info: &str) -> AdmonitionInfo {
     let trimmed = info.trim();
-    let (head, title) = match trimmed.find('"') {
-        Some(at) => {
-            let inner = trimmed[at..].trim().trim_matches('"');
-            (
-                trimmed[..at].trim(),
-                Some((inner.to_string(), offset_in(info, inner) as usize)),
-            )
+    // `!!! solution {lines=5}`: the `:::` attribute list, accepted on the
+    // sugar spelling too (spec §Admonition). It closes the line, so what
+    // comes before it is the type, its classes and its title.
+    let (head, attrs) = match trimmed.strip_suffix('}').and_then(|body| {
+        let at = (0..body.len())
+            .find(|at| body.is_char_boundary(*at) && looks_like_attributes(body.as_bytes(), *at))?;
+        let inside = &body[at + 1..];
+        Some((&trimmed[..at], inside, parse_attrs(inside)?))
+    }) {
+        Some((head, inside, attrs)) => {
+            (head.trim(), Some((attrs, offset_in(info, inside) as usize)))
         }
         None => (trimmed, None),
     };
+    let (head, title) = match head.find('"') {
+        Some(at) => {
+            let inner = head[at..].trim().trim_matches('"');
+            (
+                head[..at].trim(),
+                Some((inner.to_string(), offset_in(info, inner) as usize)),
+            )
+        }
+        None => (head, None),
+    };
     let mut words = head.split_whitespace().map(str::to_string);
     let kind = words.next().unwrap_or_default();
-    (kind, words.collect(), title)
+    AdmonitionInfo {
+        kind,
+        classes: words.collect(),
+        title,
+        attrs,
+    }
 }
 
 /// Byte offset, inside the text of an attribute list, of the value of
@@ -664,16 +696,32 @@ mod tests {
         assert_eq!(name, "warning");
         assert_eq!(attrs.unwrap().get("title"), Some("LaTeX toolchain"));
         assert!(valid);
-        let (kind, classes, title) = parse_admonition_info("note inline end \"Folded\"");
-        assert_eq!(kind, "note");
-        assert_eq!(classes, vec!["inline", "end"]);
-        assert_eq!(title, Some(("Folded".to_string(), 17)));
+        let head = parse_admonition_info("note inline end \"Folded\"");
+        assert_eq!(head.kind, "note");
+        assert_eq!(head.classes, vec!["inline", "end"]);
+        assert_eq!(head.title, Some(("Folded".to_string(), 17)));
+        assert!(head.attrs.is_none());
         // The offset is the one of the title in the info as given, blanks
         // and all: a span of the marker line, not of the trimmed info.
         let info = "  exercise \"#(ex:un) : T\"  ";
-        let (_, _, title) = parse_admonition_info(info);
-        let (text, at) = title.unwrap();
+        let (text, at) = parse_admonition_info(info).title.unwrap();
         assert_eq!(&info[at..at + text.len()], "#(ex:un) : T");
+        // `!!! type {attrs}`: the `:::` list on the sugar spelling, after
+        // the classes and the title (spec §Admonition).
+        let info = "solution inline \"T\" { #a:b .cls lines=5 }";
+        let head = parse_admonition_info(info);
+        assert_eq!(head.kind, "solution");
+        assert_eq!(head.classes, vec!["inline"]);
+        assert_eq!(head.title.as_ref().unwrap().0, "T");
+        let (attrs, at) = head.attrs.unwrap();
+        assert_eq!(attrs.id.as_deref(), Some("a:b"));
+        assert_eq!(attrs.classes, vec!["cls"]);
+        assert_eq!(attrs.get("lines"), Some("5"));
+        assert_eq!(&info[at..at + 3], " #a");
+        // A `{` in the title is not a list, and a list that does not parse
+        // stays the PyMdownX words it was.
+        assert!(parse_admonition_info("note \"a {x=1}\"").attrs.is_none());
+        assert!(parse_admonition_info("note {not a list}").attrs.is_none());
     }
 
     #[test]

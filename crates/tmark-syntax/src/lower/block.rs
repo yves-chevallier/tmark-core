@@ -335,17 +335,36 @@ impl Lowerer {
             Node::TmarkAdmonition(a) => {
                 let span = self.span(ctx, a.position.as_ref());
                 let meta = self.meta(span);
-                let (kind, classes, title) = parse_admonition_info(&a.info);
-                let mut attrs = Attrs::new();
-                attrs.classes = classes;
+                let head = parse_admonition_info(&a.info);
+                let kind = head.kind;
+                let info_at = admonition_info_at(ctx, a.position.as_ref(), &a.marker, &a.info);
+                // `!!! solution {lines=5}`: the attribute list of the `:::`
+                // spelling, with the bare PyMdownX words as classes before
+                // the ones it declares (spec §Admonition).
+                let mut attrs = match head.attrs {
+                    Some((mut attrs, at)) => {
+                        match info_at {
+                            Some(base) => self.relocate_attrs(ctx, &mut attrs, base + at),
+                            None => attrs.id_span = None,
+                        }
+                        let mut classes = head.classes;
+                        classes.append(&mut attrs.classes);
+                        attrs.classes = classes;
+                        attrs
+                    }
+                    None => {
+                        let mut attrs = Attrs::new();
+                        attrs.classes = head.classes;
+                        attrs
+                    }
+                };
                 if a.marker.starts_with("???") {
                     attrs.kv.push((
                         "collapsed".to_string(),
                         (!a.marker.ends_with('+')).to_string(),
                     ));
                 }
-                let info_at = admonition_info_at(ctx, a.position.as_ref(), &a.marker, &a.info);
-                let title = title.map(|(t, at)| {
+                let title = head.title.map(|(t, at)| {
                     let anchor = info_at
                         .map(|base| self.span_of(ctx, base + at, base + at + t.len()))
                         .unwrap_or(span);

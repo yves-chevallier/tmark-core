@@ -1,0 +1,10 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+<div class="admonition note" markdown="1">
+<p class="admonition-title" markdown="span">Note</p>
+
+Corps.
+
+</div>

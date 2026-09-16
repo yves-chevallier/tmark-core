@@ -49,14 +49,19 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 /// At a line ending, looking for a further indented line (blank lines may
 /// come between).
 pub fn further_start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.lazy || tokenizer.pierce {
-        return State::Nok;
-    }
     if tokenizer.current == Some(b'\n') {
+        // At the line ending that closes the previous line: `lazy` and
+        // `pierce` still describe *that* line, not the body line we are
+        // about to read. A head line that closed a container is lazy
+        // (`- a`, a blank line, `!!! note`): its body follows all the same.
+        // The flags are checked when this state is re-entered, at the start
+        // of the next line, where they describe it.
         tokenizer.enter(crate::event::Name::LineEnding);
         tokenizer.consume();
         tokenizer.exit(crate::event::Name::LineEnding);
         State::Next(StateName::TmarkBodyFurtherStart)
+    } else if tokenizer.lazy || tokenizer.pierce {
+        State::Nok
     } else {
         tokenizer.attempt(State::Ok, State::Next(StateName::TmarkBodyFurtherBegin));
         State::Retry(space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE))

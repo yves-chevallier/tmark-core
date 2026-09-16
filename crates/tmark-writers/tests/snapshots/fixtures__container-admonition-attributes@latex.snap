@@ -1,0 +1,25 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+\begin{tscallout}[kind=note, lines=5]
+Corps.
+\end{tscallout}
+
+---requires---
+{
+  "packages": [
+    "tcolorbox",
+    "xcolor"
+  ],
+  "fragments": [
+    "ts-callouts"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

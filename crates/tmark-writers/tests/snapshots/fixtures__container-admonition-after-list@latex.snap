@@ -1,0 +1,35 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+\begin{tstasklist}
+\item[\tsdone] Vrai
+\end{tstasklist}
+
+\begin{tscallout}[kind=note]
+Corps.
+\end{tscallout}
+
+Fin.
+
+---requires---
+{
+  "packages": [
+    "amssymb",
+    "enumitem",
+    "pifont",
+    "tcolorbox",
+    "xcolor"
+  ],
+  "fragments": [
+    "ts-callouts",
+    "ts-todolist"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

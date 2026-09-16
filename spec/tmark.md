@@ -1723,6 +1723,12 @@ Install TeX Live, MiKTeX or MacTeX before `texsmith --build`.
     Install TeX Live, MiKTeX or MacTeX before `texsmith --build`.
 ```
 
+The marker line ends with the attribute list of the canonical spelling
+when it has one (`!!! solution {lines=5}`, `??? note "T" {#n:1 .wide}`):
+what the `:::` fence takes after the name, the sugar takes after the type,
+its classes and its title (challenge C71). The bare PyMdownX words stay
+classes, so `!!! note inline end {lines=5}` has both.
+
 Built-in types: `note tip warning important danger info hint seealso
 question abstract`, each with a localised default title used when
 `title=` is absent (`Note`, `See also`, …). A type that is neither

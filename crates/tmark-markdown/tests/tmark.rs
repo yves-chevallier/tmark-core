@@ -291,6 +291,34 @@ fn admonitions() -> Result<(), message::Message> {
         ),
         "should need a type"
     );
+    // A marker line that closes a container is a lazy line; its body is
+    // indented all the same and belongs to the callout.
+    for source in [
+        "- [x] a\n\n!!! note\n\n    Body.\n\nEnd.\n",
+        "- [x] a\n!!! note\n    Body.\n\nEnd.\n",
+    ] {
+        let tree = parse(source)?;
+        let children = tree.children().unwrap();
+        match &children[1] {
+            Node::TmarkAdmonition(node) => assert_eq!(node.value, "Body.", "{:?}", source),
+            other => panic!("expected an admonition, got {:?}", other),
+        }
+        assert!(matches!(&children[2], Node::Paragraph(_)), "{:?}", source);
+    }
+    // A body line that is itself lazy, or that opens a container, is not
+    // the callout's.
+    let tree = parse(
+        "> !!! note
+    Body.
+",
+    )?;
+    match &tree.children().unwrap()[0] {
+        Node::Blockquote(quote) => match &quote.children[0] {
+            Node::TmarkAdmonition(node) => assert_eq!(node.value, ""),
+            other => panic!("expected an admonition, got {:?}", other),
+        },
+        other => panic!("expected a block quote, got {:?}", other),
+    }
     Ok(())
 }
 
