@@ -1,8 +1,82 @@
 # 13 — Handoff notes
 
-Five handoffs, newest first. Read `AGENTS.md`, then this file, then
+Six handoffs, newest first. Read `AGENTS.md`, then this file, then
 `11-roadmap.md`, then `design/reviews/`. Everything below is opinion from
 the inside of the work: verify it, do not trust it.
+
+## The anchors round (2026-09-16, third Zensical wave)
+
+Branch `autorefs-anchors`, on top of the round below. Two decisions of the
+maintainer, one boundary each.
+
+- **The front-matter epigraph left the core** (C69). `epigraph:` is a key
+  that only *appears* in the front matter: it says what a page's epigraph
+  is, never where it goes, and choosing the place is a document project's
+  decision. The two commits that set it under the opening heading are
+  reverted — `common::epigraph`, the writers' use of it, the web
+  lowering's `<blockquote class="ts-epigraph">`. What stays is the typed
+  key (`Keys::epigraph`, schema'd, printed back) and the `> {.epigraph}`
+  quote every writer already rendered. TeXSmith renders the key now, as a
+  pass over the IR and over the web text. One genuine omission of the HTML
+  writer survived the revert, in its own commit: an epigraph's `source`
+  attribute is written in a `<footer>`, where LaTeX had
+  `\tsepigraph[source={…}]` and Typst `#ts-epigraph(source: …)` all along.
+- **`[text](#id)` is the canonical textual reference, `[text][id]` is
+  compatibility sugar** (C62, amended). The reference-style reading of the
+  round below said both spellings were canonical; they are not equals.
+  `[text][id]` with no definition is a link only to `mkdocs-autorefs`, so
+  it is class E and deprecated, with `[text](#id)` as its fix. The
+  deprecation is the *resolution's* to report, because so is the reading
+  (`[a review][knuth:1984]` names no label and must raise nothing): the
+  diagnostic and its fix come from `resolve_all`, so `tmark check` and
+  `tmark lint --fix` rewrite the spelling and `tmark fmt`, which has no
+  `Resolved`, leaves it alone. Design 04's profile table says so.
+- **The site stopped depending on autorefs.** `lower_web` now reads an
+  anchor link: a same-page `#id` keeps its bytes, and a label the
+  resolution places on a sibling page is spliced with that page's location
+  (`[text](other-page.md#id)`), the way `@id` already was
+  (`Resolution::Sibling`). The deprecated spelling is written canonically
+  in both cases, a site being owed Markdown a plain CommonMark parser
+  reads. Fixtures `link-anchor` (each backend, same page) and
+  `reference-style-link` (the deprecation and its fix);
+  `tests/anchors.rs` and `tests/web.rs` hold the `book` sibling cases,
+  which no fixture can express (the conformance runner resolves with no
+  `book`).
+
+Measured on this branch: `cargo fmt --all --check`, `cargo clippy
+--workspace --all-targets -- -D warnings`, `cargo test --workspace` clean;
+schema, registries, the Python stub and the fixture IR regenerate with no
+drift; `crates/tmark-py/tests` 51 passed after `maturin develop`. TeXSmith
+`uv run pytest -q` 1548 passed — one test of the previous round
+(`test_a_reference_style_link_is_left_to_autorefs`) asserted the behaviour
+this round reverses and was rewritten in place. `scripts/parity.py baseline
+--check` 251/251 identical: **no writer output of the corpus moved**, so
+nothing was re-recorded. On the handbook, `zensical build -c` reports
+"No issues found", **0** `unresolved autoref` (as before) and **81**
+`deprecated`, one per reference-style link that refers, each carrying its
+`[text](#id)` fix.
+
+### The cross-repository contract (additions this round)
+
+- **No writer reads `epigraph:` any more.** A page carrying the key
+  renders no epigraph from the core, in any backend, until TeXSmith's pass
+  splices the quote. The quote itself is unchanged: `> {.epigraph}` with a
+  `source` is `\tsepigraph[source={…}]`, `#ts-epigraph(source: …)` and
+  `<blockquote class="epigraph">…<footer>…</footer>`. The `<footer>` is
+  new on the HTML side, so a consumer diffing HTML for a hand-written
+  epigraph sees it.
+- **`lower_web` rewrites anchor links.** `[text](#id)` whose label lives on
+  a sibling page becomes `[text](other-page.md#id)`; `[text][id]` becomes
+  `[text](#id)` or `[text](other-page.md#id)`. Anything diffing lowered
+  pages against a recorded artifact must re-record a page whose anchors
+  point across the site. The site no longer needs `mkdocs-autorefs` for
+  these links — the anchor itself is still written `[](){#id}`, which is
+  the only spelling `attr_list` turns into an element.
+- **A new `deprecated` spelling reaches `tmark.check` / `tmark.fixes`**,
+  `[text][id]`, and it is the first one whose diagnostic is *not* the
+  parser's: it comes from the resolve stage, with its own `Fix` rather
+  than the node reprint. A consumer that collected `deprecated` from
+  `parse` alone will not see it; `tmark.check` and `analyse` do.
 
 ## The fragment-spans round (2026-09-16, second Zensical wave)
 
