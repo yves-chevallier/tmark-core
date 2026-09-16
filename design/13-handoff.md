@@ -1,8 +1,136 @@
 # 13 — Handoff notes
 
-Six handoffs, newest first. Read `AGENTS.md`, then this file, then
+Seven handoffs, newest first. Read `AGENTS.md`, then this file, then
 `11-roadmap.md`, then `design/reviews/`. Everything below is opinion from
 the inside of the work: verify it, do not trust it.
+
+## The review round of the anchors wave (2026-09-16)
+
+A review of `main..autorefs-anchors` — the three rounds below, read
+against the spec and the fixtures. Five fixes, one commit each, and
+this note; the branch's own reading of the corpora stands, and what
+follows is what it missed.
+
+- **The reference-style reading took a text that is one run only**
+  (`46d2c79`), so `` [`#include`][cpp:include] `` — the shape of every
+  directive table in the handbook — was literal text: no
+  `Target::Reference`, no `deprecated`, `[\tscodeinline{\#include}][…]`
+  in the PDF against a link on the site. That is exactly the split C62
+  opens with, left standing for every reference whose text is not plain.
+  The tokenizer leaves the spelling as the brackets *around* the nodes
+  of its text, so the lowering cuts it out of them
+  (`inline.rs::reference_cut`): the last `[` of the node that opens it
+  (the last, so a nearer opener wins, as in CommonMark), the nodes
+  between, and the `][id]` that closes it, wherever in a node those
+  fall. It reads what CommonMark leaves undefined and stops where
+  CommonMark's reading would — verbatim in the source, one line, no
+  link or image inside the text. The text-run scan
+  (`sugar::reference_link`) stays for the plain case, where it has the
+  exact escape alignment; the two share the id grammar
+  (`sugar::reference_tail`).
+- **The deprecation's fix rewrites the `][id]` alone** now, not the
+  whole node from `plain_text(content)`, which would have dropped the
+  markup the reading just gained. The fix span runs from the end of the
+  text to the end of the node and is dropped if those offsets are not
+  inside it (a link lowered inside a fragment).
+- **`link_text` escaped brackets inside code spans** (`a4730a5`): a code
+  span is read before a link is, so `` [`array[i]`][cpp:array] ``
+  reached the site with the brackets of its code span backslashed, and
+  the page showed those backslashes. Reachable before this branch through a sibling
+  reference; reachable everywhere once a directive table refers.
+- **The web lowering addressed a reference-style link by the key the
+  author spelled** (`e6f7ef0`), not by the label as declared. TMark
+  matches a key case-insensitively and an HTML `id` does not, so
+  `[x][claim]` pointed at nothing on a page declaring `{#Claim}`. It now
+  does what `@key` has always done (`Labels::get(key).id`).
+- **The hard-break bracket guard covered the text run alone**
+  (`e6f7ef0`): an unresolved `@key` (`[?key]`) or an unresolved
+  reference-style link right after a `\\` was still eaten as its
+  optional `[⟨dimen⟩]`. `Latex::guard_break` now covers what those nodes
+  write. The cell side (`escape::guard_bracket`) was right.
+- **An image's alternative text was two bytes to the left**
+  (`b25a1c8`). §Round-trip and source spans names the alt among the
+  fragments that carry the spans of their slice, and `lower_fragment`
+  was handed the image's own span, so `an alt` carried `![an a`.
+  `lower_fragment_in` locates the fragment in the construct that spells
+  it. An alt the tokenizer has already flattened — a code span in an alt
+  reaches the lowering as its plain text — is no slice and falls back.
+- **The caught panic is the fixture's, and is now a value**
+  (`614405c`). `cargo test -p tmark-writers --test web` printed
+  `to_mdast.rs:2129 unreachable: mismatched (non-jsx): ListUnordered /
+  ListOrdered` on the `fixtures` test: it is `diag-parse-internal`,
+  which feeds the tokenizer `- ```h` then `1. i` on purpose, and the
+  parser's `catch_unwind` turns it into `parse-internal`. No hidden
+  defect in the mdast conversion — a list does not switch marker kind,
+  an unclosed fence in a list item does. `on_mismatch_error` already
+  returns `Result` for the JSX case, so the non-JSX mismatch is
+  returned too: the diagnostic message changes, nothing else, and the
+  failure survives a `panic = "abort"` profile.
+
+Sentences corrected against the code: §Round-trip and source spans
+promised that a fragment with no source of its own carries *the span of
+the construct*, where the lowering anchors it at the construct and adds
+offsets in the fragment — a span that points inside the construct and
+is no slice of its node (the writers' "does this run read back" check is
+what makes it safe, and the spec now says so); §Ref's "the reading
+applies to a reference whose text is one run of text"; the deprecation
+schedule's `[](){#id}` row, which never said the `mkdocs` profile prints
+that spelling on purpose; `escape::label`'s injectivity, which every
+whitespace character shares one mapping against; and the doc comment of
+`Keys::epigraph`, still saying the core places it before the first
+heading — a schemars description, so it was in `ir.json`,
+`frontmatter.json` and the generated `model.py`.
+
+Measured on this branch: `cargo fmt --all --check`, `cargo clippy
+--workspace --all-targets -- -D warnings`, `cargo test --workspace`
+clean, with **no caught panic printed**; schema, registries, the Python
+stub and the fixture IR regenerate with no drift;
+`crates/tmark-py/tests` 51 passed. TeXSmith `uv run pytest -q`: 1551
+passed, **1 failed** — `test_fixture_inputs_are_fresh`, three
+`tests/passes/**/*.in.json` recorded with the old image-alt spans
+(`make ir-fixtures` there; a span-only change). `scripts/parity.py
+baseline --check` 251/251 identical: no writer output of the corpus
+moved.
+
+### The cross-repository contract (additions this round)
+
+- **An image alt's node spans moved** by the two bytes of `![`. Anything
+  recording the IR of a document with an image re-records:
+  `texsmith/tests/passes/assets/local.in.json`, `assets/mermaid.in.json`
+  and `stubs/plain.in.json` are the three that hold one today.
+- **The IR schema hash moved**, from the `epigraph` description alone.
+  `texsmith/ir/model.py` and the recorded hash are regenerated; no field
+  and no type changed.
+- **A reference-style link with markup in its text is now a `Link`**
+  with `Target::Reference`, where it used to be three literal inlines.
+  A consumer counting `deprecated` sees more of them (one per such
+  link), and `lower_web` rewrites those links too.
+- **`tmark.check` fixes for `[text][id]` are tail splices**: the fix
+  span covers `][id]` and its replacement is `](#id)`, not the whole
+  node. Anything asserting the replacement text changes; anything
+  applying fixes through `tmark.apply_fixes` does not.
+- **The `parse-internal` message changed** for the mismatch case, from
+  the panic's "entered unreachable code: mismatched (non-jsx): …" to
+  "Cannot close X: Y is open". Nothing keys on it here.
+
+### Known and left
+
+- `link_text` still escapes a bracket inside raw HTML written by the
+  lowering itself (a counter's `<span …>` carries none today).
+- Zensical validates a page's `#id` anchors against the *source*, before
+  `lower_web` splices the sibling page in, so 47 cross-page
+  `[text](#id)` links of the handbook raise "anchor does not exist"
+  although the rendered links are right. Not the core's: filed in the
+  handbook's TODO.
+- `Payload::locate` finds a cell's text anywhere in the payload, a YAML
+  key included, so a cell reading `name` can be located at the `name:`
+  of a column. The slice still reads back as the cell, so nothing is
+  mis-spliced; a span for an editor may point at the key.
+- The alternative to the §Round-trip correction — collapsing every node
+  of a source-less fragment onto the construct's own span — needs a
+  mutable walk over inlines that `tmark-ir` does not have, and would
+  give `fixes()` several nodes with one span to choose between. It was
+  not taken.
 
 ## The anchors round (2026-09-16, third Zensical wave)
 
