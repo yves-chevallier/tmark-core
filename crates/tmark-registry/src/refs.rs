@@ -3,7 +3,7 @@
 
 use schemars::JsonSchema;
 use serde::Serialize;
-use tmark_ir::{walk, Code, Diagnostic, Inline, NodeId, NodeRef, Span, Target};
+use tmark_ir::{plain_text, walk, Code, Diagnostic, Fix, Inline, NodeId, NodeRef, Span, Target};
 
 use crate::Resolved;
 
@@ -58,12 +58,25 @@ pub struct RefResolution {
     pub resolution: Resolution,
 }
 
+/// One reference found in the tree, before it is resolved.
+struct Found {
+    node: NodeId,
+    /// The key token, for the diagnostic of an item of a `Ref`.
+    span: Span,
+    /// The whole node, for a diagnostic about the spelling.
+    node_span: Span,
+    key: String,
+    /// `@key` or `[](#key)`, which shows a number, as opposed to
+    /// `[text](#key)`, which shows the author's text.
+    numeric: bool,
+    /// The text of the reference-style `[text][id]`, which is a reference
+    /// only when it names a label and stays literal text otherwise; `None`
+    /// for every other spelling.
+    reference_style: Option<String>,
+}
+
 pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
-    // (node, key span, node span, key, numeric: `@key` or `[](#key)`,
-    // which shows a number, as opposed to `[text](#key)`; labels_only:
-    // the reference-style `[text][id]`, which is a reference only when it
-    // names a label and stays literal text otherwise)
-    let mut found: Vec<(NodeId, Span, Span, String, bool, bool)> = Vec::new();
+    let mut found: Vec<Found> = Vec::new();
     walk(doc, &mut |node: NodeRef| {
         if let NodeRef::Inline(inline) = node {
             match inline {
@@ -74,36 +87,80 @@ pub fn resolve_all(doc: &tmark_ir::Document, resolved: &mut Resolved) {
                         } else {
                             item.key_span.0
                         };
-                        found.push((r.meta.id, span, r.meta.span, item.key.clone(), true, false));
+                        found.push(Found {
+                            node: r.meta.id,
+                            span,
+                            node_span: r.meta.span,
+                            key: item.key.clone(),
+                            numeric: true,
+                            reference_style: None,
+                        });
                     }
                 }
                 Inline::Link(l) => match &l.target {
-                    Target::Anchor(id) => found.push((
-                        l.meta.id,
-                        l.meta.span,
-                        l.meta.span,
-                        id.clone(),
-                        l.content.is_empty(),
-                        false,
-                    )),
-                    Target::Reference(id) => {
-                        found.push((l.meta.id, l.meta.span, l.meta.span, id.clone(), false, true))
-                    }
+                    Target::Anchor(id) => found.push(Found {
+                        node: l.meta.id,
+                        span: l.meta.span,
+                        node_span: l.meta.span,
+                        key: id.clone(),
+                        numeric: l.content.is_empty(),
+                        reference_style: None,
+                    }),
+                    Target::Reference(id) => found.push(Found {
+                        node: l.meta.id,
+                        span: l.meta.span,
+                        node_span: l.meta.span,
+                        key: id.clone(),
+                        numeric: false,
+                        reference_style: Some(plain_text(&l.content)),
+                    }),
                     Target::Url(_) | Target::Document(_) => {}
                 },
                 _ => {}
             }
         }
     });
-    for (node, span, node_span, key, numeric, labels_only) in found {
-        let resolution = if labels_only {
-            resolve_label(&key, resolved)
-        } else {
-            resolve_one(&key, span, resolved)
+    for Found {
+        node,
+        span,
+        node_span,
+        key,
+        numeric,
+        reference_style,
+    } in found
+    {
+        let resolution = match &reference_style {
+            Some(_) => resolve_label(&key, resolved),
+            None => resolve_one(&key, span, resolved),
         };
+        // Spec §Ref: the reference-style form is a compatibility
+        // spelling; where it refers, the canonical `[text](#id)` says the
+        // same thing to every renderer, and the fix rewrites it. Where it
+        // names no label it is CommonMark's literal text and says nothing
+        // — no `deprecated` either, which would fire on every sentence
+        // ending a bracketed aside with a bracketed word.
+        if let Some(text) = &reference_style {
+            if matches!(
+                resolution,
+                Resolution::Label { .. } | Resolution::Sibling { .. }
+            ) {
+                let canonical = format!("[{text}](#{key})");
+                resolved.diagnostics.push(Diagnostic {
+                    fix: Some(Fix {
+                        span: node_span,
+                        replacement: canonical.clone(),
+                    }),
+                    ..Diagnostic::new(
+                        Code::Deprecated,
+                        node_span,
+                        format!("`[{text}][{key}]` is deprecated, write `{canonical}`"),
+                    )
+                });
+            }
+        }
         // Spec §Ref: a reference-style link that names no label is the
         // literal text CommonMark makes of it, and says nothing.
-        if resolution == Resolution::Unresolved && !labels_only {
+        if resolution == Resolution::Unresolved && reference_style.is_none() {
             resolved.diagnostics.push(Diagnostic::new(
                 Code::RefUnresolved,
                 span,

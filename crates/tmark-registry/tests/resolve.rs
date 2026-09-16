@@ -190,9 +190,16 @@ fn reference_style_links_resolve_against_the_labels_alone() {
         "a bibliography key is not a label"
     );
     assert_eq!(r.refs[3].resolution, Resolution::Unresolved);
-    assert!(
-        codes(&r.diagnostics).is_empty(),
-        "an unresolved reference-style link says nothing: {:?}",
-        codes(&r.diagnostics)
-    );
+    // The spelling is a compatibility form: where it refers, it is
+    // deprecated with the canonical `[text](#id)` as its fix; where it
+    // names no label it is CommonMark's literal text and says nothing,
+    // `deprecated` included.
+    assert_eq!(codes(&r.diagnostics), ["deprecated", "deprecated"]);
+    let fixes: Vec<&str> = r
+        .diagnostics
+        .iter()
+        .filter_map(|d| d.fix.as_ref())
+        .map(|f| f.replacement.as_str())
+        .collect();
+    assert_eq!(fixes, ["[the claim](#claim)", "[the finding](#fw:boot)"]);
 }

@@ -1022,7 +1022,7 @@ Table: Inline text nodes. {#tbl:inline}
 | `Keystroke` | `{keys}[ctrl+s]` (verbatim, keys split on `+`) | `++ctrl+s++` | D | ts-keystrokes / `kbd` / `<kbd>` |
 | `Code` | `` `x` `` | (none) | C | engine-dependent |
 | `Code` (highlighted) | `{code lang=py}[print(1)]`, positional `{code py}[…]` (verbatim) | `` `#!py print(1)` `` | D | engine-dependent |
-| `Link` | `[text](url)`, `[text](#id)`, `[text][id]` (§Ref, reference-style), `<url>` | a bare URL (magic link, autolinked; the printer keeps it bare) | C | `\href` / `#link` / `<a>` |
+| `Link` | `[text](url)`, `[text](#id)`, `<url>` | a bare URL (magic link, autolinked; the printer keeps it bare); `[text][id]` with no definition (§@[sec:references], reference-style, deprecated) | C | `\href` / `#link` / `<a>` |
 | `Math` | `$x$` | `\(x\)` | C | `\(…\)` / `$x$` / MathJax |
 | `Quoted` | `"x"` | (none; the pair is read by the smart-symbol rule, Appendix @[app:pymdownx]) | C | `\enquote` / smart quotes / locale quotes |
 | `Abbr` | the acronym, with `*[HTML]: expansion` defined once (§@[sec:glossary]) | (none) | E | `\acrshort` / `#ts-abbr` / `<abbr>` |
@@ -1290,9 +1290,17 @@ move in print, so a position word is a reference in disguise, and
 `tmark check` hints `position-word` on it (and `hardcoded-number` on a
 "Figure 3" typed by hand). Both are style hints, never errors.
 
+`#id` addresses the *rendered page*, and the label may live on another
+document of the book. Where it does, the anchor is the consumer's to
+address: a site generator that knows the site map rewrites the destination
+into a cross-page link (`[the trace](other-page.md#fig:trace)`), exactly as
+it does for `@fig:trace`, and a paged build has every page in one document
+and needs nothing. The author writes `#id` and never learns which page the
+label ended up on.
+
 A textual reference has a second spelling, CommonMark's *reference-style*
-link, which a document written for a site uses to point at an anchor
-without knowing which page holds it:
+link, which a documentation corpus written for a MkDocs site uses to point
+at an anchor without knowing which page holds it:
 
 ```md
 []{#opengl-coordinates}                 the anchor, on its page
@@ -1303,23 +1311,31 @@ without knowing which page holds it:
 `[text][id]` is a link only when a link definition `[id]: url` matches it;
 none does here, and CommonMark then reads the whole spelling as literal
 text. TMark reads it, once nothing else has claimed it, as a textual
-reference to `id` — the same node as `[text](#id)`, kept apart from it
-because the two differ where it matters: `#id` is an address inside the
-rendered page, `[id]` is a name resolved wherever the label lives, which is
-what `mkdocs-autorefs` does on the web and what a book does across its
-documents. Both spellings are canonical (class C); the printer keeps the
-one the author wrote.
+reference to `id` — the same reference `[text](#id)` makes, spelled the
+way `mkdocs-autorefs` resolves it.
+
+That is all it is: a compatibility form (class E, Appendix
+@[app:pymdownx]), kept so that a corpus written for autorefs parses. It is
+**deprecated** (Appendix @[app:deprecations]), because the canonical
+spelling says the same thing to every renderer: `[text](#id)` is a link in
+plain CommonMark, `[text][id]` is brackets. Where the reference-style form
+refers, it is reported `deprecated` with `[text](#id)` as its fix — the
+resolution decides, so the report comes from `tmark check` and
+`tmark lint --fix`, not from `tmark fmt`, which sees no labels. A consumer
+that rewrites the destination the way the previous paragraph describes owes
+autorefs nothing.
 
 The lookup is the *labels alone* — this document's, then the book's
 (§@[sec:lookup], steps 3 and its sibling documents) — never the
 bibliography, the glossary or an inventory: `[a review][knuth:1984]` is
 prose about a review, not a citation. A key that is no label is not a
 reference at all: the node keeps the meaning CommonMark gives it, literal
-text with its brackets, and reports nothing — `ref-unresolved` speaks for
-`@key`, which has no other reading, and would here fire on every ordinary
-sentence that happens to end a bracketed aside with a bracketed word. The
-reading applies to a reference whose text is one run of text; a text
-carrying markup (`[the **trace**][id]`) stays what CommonMark makes of it.
+text with its brackets, and reports nothing — neither `ref-unresolved`,
+which speaks for `@key`, which has no other reading, nor `deprecated`:
+either would fire on every ordinary sentence that happens to end a
+bracketed aside with a bracketed word. The reading applies to a reference
+whose text is one run of text; a text carrying markup (`[the **trace**][id]`)
+stays what CommonMark makes of it.
 
 #### Cite
 
@@ -2342,6 +2358,7 @@ Table: PyMdownX sugar accepted under the compatibility profile. {#tbl:compat}
 | `/// html \| div[class='x']` … `///` | `::: div {.x}` (§@[sec:containers]) | E | `pymdownx.blocks.html`; the selector's tag is the container name; deprecated, Appendix @[app:deprecations] |
 | `{: .cls #id}` | `{.cls #id}` | E | Python-Markdown `attr_list` colon; deprecated |
 | `{ .c .annotate }` as a whole fence info string | `c {.annotate}` | E | superfences' braces-only spelling: the first class is the language (§@[sec:grammar], family 4); deprecated, Appendix @[app:deprecations] |
+| `[text][id]` with no link definition | `[text](#id)` (§@[sec:references]) | E | `mkdocs-autorefs` resolves it across the pages of a site; a reference only where `id` is a label, literal text otherwise; deprecated, Appendix @[app:deprecations] |
 | `[[Page Title]]`, optional label after a vertical bar | `Link` to the project file | D | wiki links; which file a title names is the site's *(processor)*, so the link is kept as typed and reported `compat-unsupported` |
 | critic markup: insert `++`, delete `--`, substitute `~~ ~> ~~`, highlight `==`, comment in double angle brackets, each wrapped in braces | `Span{.critic}` holding `Underline`, `Strikeout`, the two in order, or `Comment`; the highlight is a plain `Highlight` | E | see below; the printer emits the critic spelling, and nothing fires inside code, where the extension does |
 | `:smile:` | `Str` holding the character | E | emoji, GitHub's name table; the printer emits the character (§@[sec:inline]) |
@@ -2425,6 +2442,7 @@ Table: Deprecated spellings and their horizons. {#tbl:deprecations}
 | `@https://doi.org/…` | `@doi:…` | draft 3 | indefinite (sugar) |
 | `[](gls:term)` | `@gls:term` | draft 2 | fmt |
 | `[](){#id}` anchor | `[]{#id}` | draft 3 | fmt |
+| `[text][id]` reference-style link | `[text](#id)` | draft 3 | fmt (from `lint --fix`: the resolution decides) |
 | bare `mermaid` fence | `mermaid image` | draft 3 | indefinite (MkDocs renders it) |
 | `!!!` / `???` callouts | `::: type {…}` | draft 2 | indefinite (MkDocs Material renders them) |
 | top-level `bibliography`, `crossrefs` | `sources.*` | draft 3 | fmt |

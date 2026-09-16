@@ -1,11 +1,19 @@
-# Reference-style link
+# Reference-style link, deprecated
 
-Spec §Ref, "reference-style form". `[text][id]` with no link definition is
-what a MkDocs site writes to point at an anchor it does not know the page
-of. TMark reads it as a textual reference to the label `id`: the same node
-as `[text](#id)`, spelled so that `mkdocs-autorefs` still resolves it on
-the web. A key that is no label is not a reference — the node renders the
-brackets CommonMark reads there, and says nothing.
+Spec §Ref, "reference-style form", and Appendix "Deprecation schedule".
+`[text][id]` with no link definition is what a documentation corpus written
+for MkDocs holds, because `mkdocs-autorefs` resolves it across the pages of
+a site. TMark reads it as the textual reference `[text](#id)` makes — and
+no more than that: it is a compatibility spelling (class E), deprecated in
+favour of the canonical one, which is a link to every Markdown renderer
+where this is brackets. Where it refers, `deprecated` is reported with
+`[text](#id)` as its fix; the web lowering writes the canonical spelling
+too, so the site receives Markdown any parser understands.
+
+A key that is no label is not a reference — the node renders the brackets
+CommonMark reads there, says nothing, and is not deprecated either: the
+spelling is an ordinary sentence ending a bracketed aside with a bracketed
+word.
 
 ## input
 
@@ -89,6 +97,7 @@ See [the claim][claim], not [that][no-such-label].
 ## resolution
 
 ```text
+deprecated @ 3:5-3:23
 ```
 
 ## latex

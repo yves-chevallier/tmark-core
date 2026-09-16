@@ -85,7 +85,8 @@ Profiles are a *table* (construct → spelling function), not subclasses.
 | `latex raw` fence | `/// latex … ///` | another format, or a `///` line inside |
 | `{include}(f)` | `--8<-- "f"` | a `base`, or a `"` in the path |
 | `[]{#id}` anchor | `[](){#id}` (the only spelling `attr_list` turns into an element, hence the only one `mkdocs-autorefs` can register) | the span carries content: `[x]{#id}` is an attributed phrase |
-| `$…$`, `$$…$$`, `---`, `::: figure`, `::: aside`, `::: name`, `yaml table`, `{underline}`, `[x]{…}`, `[text][id]`, `{{ var }}`, `@[see key, p. 3]`, `@doi:…` | canonical | |
+| `[text][id]` reference-style link | canonical, as written: the printer has no `Resolved`, and only the resolution tells a reference from the prose CommonMark reads there (§Ref). The rewrite to `[text](#id)` is the fix carried by the `deprecated` diagnostic, so `tmark lint --fix` does it and `tmark fmt` does not | |
+| `$…$`, `$$…$$`, `---`, `::: figure`, `::: aside`, `::: name`, `yaml table`, `{underline}`, `[x]{…}`, `{{ var }}`, `@[see key, p. 3]`, `@doi:…` | canonical | |
 
 Citation versus label is the spec's lookup rule (§Registries) applied to
 what the document itself declares, since the printer has no `Resolved`:

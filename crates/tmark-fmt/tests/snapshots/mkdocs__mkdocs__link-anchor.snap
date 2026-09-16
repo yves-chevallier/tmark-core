@@ -1,0 +1,7 @@
+---
+source: crates/tmark-fmt/tests/mkdocs.rs
+expression: mkdocs(&canonical)
+---
+## The claim {#sec:claim}
+
+As [the claim](#sec:claim) shows, the watchdog fires twice.
