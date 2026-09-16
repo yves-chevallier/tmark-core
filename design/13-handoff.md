@@ -113,6 +113,17 @@ those anchors can be renamed back.
   untouched, as before. Anything on TeXSmith's side diffing lowered
   pages against a recorded artifact must re-record a page whose include
   does not resolve.
+- **A callout inside an HTML wrapper is an HTML wrapper too** (C68).
+  `lower_web` used to leave a `??? solution` inside a
+  `<div class="admonition exercise" markdown="1">` as its four indented
+  source lines; it now writes `<details class="solution" markdown="1">`
+  with the body at the wrapper's column. The reason is `md_in_html`: an
+  indented HTML block inside a `markdown="1"` wrapper has its opening tag
+  read as data and its closing tag matched against the stack of open
+  blocks, so the `</div>` of a `<div markdown>` in the body closed the
+  wrapper and the rest of the page rendered inside it. Anything on
+  TeXSmith's side diffing lowered pages against a recorded artifact must
+  re-record a page with a callout inside a numbered or labelled one.
 
 ### Known and left
 

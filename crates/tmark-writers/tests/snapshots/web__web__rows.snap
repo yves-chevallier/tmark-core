@@ -120,6 +120,30 @@ In a right triangle, $a^2 + b^2 = c^2$.
 
 </div>
 
+<div class="admonition theorem" id="thm:nest" markdown="1">
+<p class="admonition-title">Theorem 2 (Nesting)</p>
+
+<div class="three-column-list" markdown>
+
+- one
+
+</div>
+
+<details class="tip" markdown="1">
+<summary class="admonition-title">Tip</summary>
+
+Folded, around
+
+<div class="two-column-list" markdown>
+
+1. un
+
+</div>
+
+</details>
+
+</div>
+
 <aside class="ts-aside" data-side="left" markdown="1">
 
 A margin *note* with [FW-03](#fw:ota).

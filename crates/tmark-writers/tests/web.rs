@@ -208,6 +208,23 @@ Folded.
 In a right triangle, $a^2 + b^2 = c^2$.
 :::
 
+::: theorem {#thm:nest title=Nesting}
+<div class="three-column-list" markdown>
+
+- one
+
+</div>
+
+??? tip
+    Folded, around
+
+    <div class="two-column-list" markdown>
+
+    1. un
+
+    </div>
+:::
+
 ::: aside {side=left}
 A margin *note* with @fw:ota.
 :::
@@ -343,6 +360,10 @@ fn every_row_of_the_table() {
     has("!!! note \"As written\"\n    Body with [FW-01](#fw:watchdog) stays a `!!!` block.");
     has("!!! warning wide \"A title\"\n    Body with [FW-03](#fw:ota) and a nested callout.\n\n    ??? tip\n        Folded.");
     has("<div class=\"admonition theorem\" id=\"thm:pyth\" markdown=\"1\">\n<p class=\"admonition-title\">Theorem 1 (Pythagoras)</p>\n\nIn a right triangle, $a^2 + b^2 = c^2$.\n\n</div>");
+    // A callout inside an HTML wrapper is an HTML wrapper too, so the
+    // `<div markdown>` its body holds is written at column zero:
+    // indented, its `</div>` would close the wrapper (C68).
+    has("<div class=\"admonition theorem\" id=\"thm:nest\" markdown=\"1\">\n<p class=\"admonition-title\">Theorem 2 (Nesting)</p>\n\n<div class=\"three-column-list\" markdown>\n\n- one\n\n</div>\n\n<details class=\"tip\" markdown=\"1\">\n<summary class=\"admonition-title\">Tip</summary>\n\nFolded, around\n\n<div class=\"two-column-list\" markdown>\n\n1. un\n\n</div>\n\n</details>\n\n</div>");
     // Asides, index, inline sugar, spans, raw, media.
     has("<aside class=\"ts-aside\" data-side=\"left\" markdown=\"1\">\n\nA margin *note* with [FW-03](#fw:ota).\n\n</aside>");
     has("<div id=\"layout\" class=\"two-column-list\" markdown=\"1\">\n\n- one\n- two\n\n</div>");

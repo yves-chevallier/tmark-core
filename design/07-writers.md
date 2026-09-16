@@ -253,7 +253,15 @@ Nesting: a whole-block replacement is re-indented for the line it is
 spliced on (the text before the block on its line, list markers turned
 into spaces, `>` kept), and a block kept as written inside a lowered
 wrapper has that prefix removed from its continuation lines before `Out`
-adds the wrapper's own. Inline spans that are not the text's (a title
+adds the wrapper's own. A callout that is a direct child of an HTML
+wrapper takes the HTML wrapper too, `!!!` source or not: the marker form
+indents its body by four, and `md_in_html` reads an indented HTML block
+inside a `markdown="1"` wrapper asymmetrically — the opening tag is data,
+the closing tag still matches the stack of open blocks, so the `</div>`
+of a `<div markdown>` in the body closes the *wrapper* and the rest of
+the page falls inside it (C68). A block kept as written keeps the
+indentation of its source, so its own children are not at the wrapper's
+column and do not inherit the rule. Inline spans that are not the text's (a title
 parsed from an attribute value, a `yaml table` cell) are detected — every
 `Str` must read back from its span — and printed instead of sliced.
 

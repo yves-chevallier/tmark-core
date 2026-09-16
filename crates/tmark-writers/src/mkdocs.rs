@@ -173,6 +173,19 @@ struct Lowerer<'a> {
     stack: Vec<PathBuf>,
     /// The front matter as JSON, for `{{ key }}`.
     front_matter: serde_json::Value,
+    /// The block being lowered is a direct child of a `markdown="1"`
+    /// wrapper, so it is written at the wrapper's own column.
+    ///
+    /// Inside such a wrapper `md_in_html` reads an *indented* HTML block
+    /// asymmetrically: the opening tag is data, because it is not at the
+    /// start of a line, while the closing tag is still matched against
+    /// the stack of open Markdown blocks. The indented `</div>` of a
+    /// `<div markdown>` a nested callout body holds therefore closes the
+    /// *wrapper*, and the rest of the page falls inside that container.
+    /// A callout lowered here takes the HTML wrapper, whose body starts
+    /// at column zero, rather than the `!!!` form, whose body is indented
+    /// by four.
+    html_parent: bool,
 }
 
 impl<'a> Lowerer<'a> {
@@ -202,6 +215,7 @@ impl<'a> Lowerer<'a> {
             diagnostics: Vec::new(),
             stack: Vec::new(),
             front_matter,
+            html_parent: false,
         }
     }
 
@@ -294,8 +308,11 @@ impl<'a> Lowerer<'a> {
 
     /// Blocks inside a lowered wrapper, written into `out` (which carries
     /// the wrapper's indentation): each block's own lowering, else its
-    /// source with the inner splices applied.
-    fn nested(&mut self, f: &File, blocks: &[Block], out: &mut Out) {
+    /// source with the inner splices applied. `html` says the wrapper is
+    /// an HTML one (`markdown="1"`), which these blocks enter at column
+    /// zero — see [`Lowerer::html_parent`].
+    fn nested(&mut self, f: &File, blocks: &[Block], out: &mut Out, html: bool) {
+        let html_parent = std::mem::replace(&mut self.html_parent, html);
         let mut written = false;
         let mut i = 0;
         while i < blocks.len() {
@@ -322,14 +339,22 @@ impl<'a> Lowerer<'a> {
             out.push(&text);
             out.ensure_newline();
         }
+        self.html_parent = html_parent;
     }
 
     /// A block as written, with the splices of its children, its
     /// continuation lines freed of the enclosing indentation.
+    ///
+    /// Its children keep the indentation the source gives them — a list
+    /// item's callout stays inside its item — so they are not at the
+    /// wrapper's column and [`Lowerer::html_parent`] does not hold for
+    /// them.
     fn verbatim(&mut self, f: &File, block: &Block, enclosing: &str) -> String {
         let span = block.meta().span;
+        let html_parent = std::mem::replace(&mut self.html_parent, false);
         let mut edits = Vec::new();
         self.children(f, block, &mut edits);
+        self.html_parent = html_parent;
         dedent(&apply(f.slice(span), span.start, edits), enclosing)
     }
 
@@ -584,7 +609,7 @@ impl<'a> Lowerer<'a> {
             }
         } else {
             let mut body = Out::scratch();
-            self.nested(f, content, &mut body);
+            self.nested(f, content, &mut body, true);
             out.push('\n');
             out.push_str(&body.finish_text());
             out.push_str("\n\n");
@@ -852,10 +877,16 @@ impl<'a> Lowerer<'a> {
     /// lowers to something the marker line cannot carry: PyMdownX reads
     /// the title up to the next `"`, so a counter or a reference that
     /// becomes a `<span …>` there needs the wrapper too.
+    ///
+    /// A callout inside an HTML wrapper takes the wrapper as well, as
+    /// written or not: the marker form indents its body, and an indented
+    /// HTML block inside a `markdown="1"` wrapper closes the wrapper
+    /// instead of itself ([`Lowerer::html_parent`]).
     fn admonition(&mut self, f: &File, a: &Admonition) -> Option<String> {
         let title = a.title.as_ref().map(|t| self.inlines_text(f, t));
         let source = f.slice(a.meta.span);
-        if (source.starts_with("!!!") || source.starts_with("???"))
+        if !self.html_parent
+            && (source.starts_with("!!!") || source.starts_with("???"))
             && title.as_deref().map_or(true, |t| !t.contains(['"', '\n']))
         {
             return None;
@@ -869,7 +900,8 @@ impl<'a> Lowerer<'a> {
         };
         let counter = self.kind_counter(&a.kind);
         let numbered = a.attrs.id.is_some() || counter.is_some();
-        let plain = !numbered
+        let plain = !self.html_parent
+            && !numbered
             && a.attrs.kv.iter().all(|(k, _)| k == "collapsed")
             && !a.content.is_empty()
             && bare(&a.kind)
@@ -891,7 +923,7 @@ impl<'a> Lowerer<'a> {
             }
             out.push("\n");
             out.push_prefix("    ");
-            self.nested(f, &a.content, &mut out);
+            self.nested(f, &a.content, &mut out, false);
             out.pop_prefix();
             return Some(out.finish_text());
         }
@@ -933,7 +965,7 @@ impl<'a> Lowerer<'a> {
             "<{title_tag} class=\"admonition-title\">{heading}</{title_tag}>\n"
         ));
         let mut body = Out::scratch();
-        self.nested(f, &a.content, &mut body);
+        self.nested(f, &a.content, &mut body, true);
         let body = body.finish_text();
         if !body.is_empty() {
             out.push('\n');
@@ -988,7 +1020,7 @@ impl<'a> Lowerer<'a> {
         }
         out.push_str(" markdown=\"1\">\n\n");
         let mut body = Out::scratch();
-        self.nested(f, &d.content, &mut body);
+        self.nested(f, &d.content, &mut body, true);
         out.push_str(&body.finish_text());
         out.push_str("\n\n</div>");
         Some(out)
@@ -1001,7 +1033,7 @@ impl<'a> Lowerer<'a> {
         }
         out.push_str(" markdown=\"1\">\n\n");
         let mut body = Out::scratch();
-        self.nested(f, &aside.content, &mut body);
+        self.nested(f, &aside.content, &mut body, true);
         out.push_str(&body.finish_text());
         out.push_str("\n\n</aside>");
         out
