@@ -9,10 +9,10 @@ description = "TMark diagnostic rules over the IR"
 
 [dependencies]
 # Rules walk the IR.
-tmark-ir = { path = "../tmark-ir", version = "0.2.0" }
+tmark-ir = { path = "../tmark-ir", version = "0.3.0" }
 # Rules read `Resolved` (counters, labels); never the file system.
-tmark-registry = { path = "../tmark-registry", version = "0.2.0", default-features = false }
+tmark-registry = { path = "../tmark-registry", version = "0.3.0", default-features = false }
 
 [dev-dependencies]
 # Tests parse their inputs.
-tmark-syntax = { path = "../tmark-syntax", version = "0.2.0" }
+tmark-syntax = { path = "../tmark-syntax", version = "0.3.0" }
