@@ -4,8 +4,8 @@
 //! `_ESCAPE_CHARS` covers only the characters that are always special
 //! (`\ # $ * _ ` < > @ [ ]`); TeXSmith's Python writer never emitted plain
 //! `Str` runs that could start a line, so it never needed the rest. TMark
-//! does, so two more rules are context-sensitive (verified against typst
-//! 0.15.1, see `crates/tmark-writers/src/typst/escape.rs` tests and
+//! does, so the rest are context-sensitive (verified against typst
+//! 0.15.1 and 0.14.2, see `crates/tmark-writers/src/typst/escape.rs` tests and
 //! `design/07-writers.md` §Implementation notes):
 //!
 //! - `~` is always a non-breaking space in markup, so it is escaped
@@ -35,30 +35,69 @@
 //!   `=` is escaped unconditionally at a line start (a heading marker is a
 //!   *run* of `=`, so escaping only the first one already breaks it for
 //!   any run length: `\==x` is not a heading); `+`, `-` and `/` need one
-//!   more character of lookahead — they are markers only when followed by
-//!   a space — so only that case is escaped, to leave a leading `-5`
-//!   (Typst renders it with a proper minus sign) or `a--b` (a leading en
-//!   dash) alone.
+//!   more character of lookahead — they are markers only when the next
+//!   character is whitespace (any whitespace: a space, a tab, the line
+//!   end) or nothing at all, which leaves a leading `-5` (Typst renders it
+//!   with a proper minus sign) or `a--b` (a leading en dash) alone.
+//! - A *number* at the start of a line is an enum marker too: digits then
+//!   `.` then whitespace (`1. x`, and `0.` alone, whose body is empty —
+//!   the `- [ ] 0.` task item of an exam, whose text vanished into an
+//!   empty `enum.item`). The backslash goes on the `.`, not on a digit
+//!   (`\1` is no escape in Typst): `0\.`. Digits-dot-*digits* is not a
+//!   marker, so a leading `3.5 kg` is left alone, and neither is a `.`
+//!   whose digits do not start the line (`at 10. o'clock` mid-sentence).
+//!   A `)` after the digits is not a marker either: Typst's enum takes
+//!   `.` alone (checked on 0.14.2; `1) bar` is text).
+//!
+//! "Followed by nothing" counts as a line end for all of these: the text
+//! of a `Str` that ends there is followed by whatever the writer prints
+//! next — a newline, the `]` that closes a content block — and only the
+//! second of those is not a line start, so escaping is again the safe
+//! superset. It is the case that matters in practice: `#ts-task("open")[0.]`
+//! is harmless as written, but the template that unwraps the task leaves
+//! `- 0.` on its own line, which is the empty enum item again.
 const MARKUP: &[char] = &['\\', '#', '$', '*', '_', '`', '<', '>', '@', '[', ']', '~'];
 
 /// Escapes text for Typst markup mode.
 pub fn markup(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 4);
     let mut chars = text.chars().peekable();
+    // At a line start, in Typst's sense: the start of the text, or the
+    // character right after an embedded `\n`.
     let mut leading = true;
+    // Digits run from the line start up to here (the number of an enum
+    // marker), zero when the line does not start with digits or when the
+    // run is already broken.
+    let mut digits = 0usize;
     while let Some(c) = chars.next() {
         let next = chars.peek().copied();
+        // A marker ends on whitespace, or on the end of the text: what
+        // follows there is whatever the writer prints next — a `\n`, the
+        // `]` of a content block — and only the first of those is not a
+        // line end, so the end of the text is escaped as one.
+        let marks = match next {
+            None => true,
+            Some(n) => n.is_whitespace(),
+        };
         let comment = c == '/' && matches!(next, Some('/') | Some('*'));
-        let structural = leading
+        let structural = (leading
             && match c {
                 '=' => true,
-                '+' | '-' | '/' => next == Some(' '),
+                '+' | '-' | '/' => marks,
                 _ => false,
-            };
+            })
+            // The `.` of an enum marker (`1.`): the backslash goes on the
+            // dot, not on a digit, since `\1` is no escape in Typst.
+            || (c == '.' && digits > 0 && marks);
         if MARKUP.contains(&c) || comment || structural {
             out.push('\\');
         }
         out.push(c);
+        digits = if c.is_ascii_digit() && (leading || digits > 0) {
+            digits + 1
+        } else {
+            0
+        };
         // A `Str` node's text normally has no embedded newline (a soft or
         // hard break is a separate `Inline`), except the rare
         // `parse-internal` fallback that keeps a whole malformed block as
@@ -188,6 +227,38 @@ mod tests {
         // just one, opens a heading, so breaking the first is enough and
         // simpler than counting the run.
         assert_eq!(markup("=5"), "\\=5");
+    }
+
+    #[test]
+    fn escapes_leading_enum_numbers() {
+        // Digits then `.` then whitespace is an enum marker, so the text
+        // of the item is eaten: `0.` alone became `enum.item(number: 0,
+        // body: [])` and nothing was printed (the `- [ ] 0.` task items
+        // of an exam). The backslash goes on the dot: `\1` is no escape.
+        assert_eq!(markup("0."), "0\\.");
+        assert_eq!(markup("1. foo"), "1\\. foo");
+        assert_eq!(markup("12.\tfoo"), "12\\.\tfoo");
+        assert_eq!(markup("2. bar\n3. baz"), "2\\. bar\n3\\. baz");
+        // Digits then `.` then a digit is a decimal number, not a marker.
+        assert_eq!(markup("3.5 kg"), "3.5 kg");
+        assert_eq!(markup("1.2.3 released"), "1.2.3 released");
+        // The digits must start the line: a sentence's own full stop, or
+        // a number in the middle of it, is left alone.
+        assert_eq!(markup("at 10. o'clock"), "at 10. o'clock");
+        assert_eq!(markup("Bonn, 1949. Later"), "Bonn, 1949. Later");
+        // `)` is not an enum marker in Typst (0.14.2: `1) bar` is text).
+        assert_eq!(markup("1) bar"), "1) bar");
+    }
+
+    #[test]
+    fn escapes_markers_before_any_whitespace_or_the_end() {
+        // A marker ends on any whitespace, not just a space; and the end
+        // of the text is a line end too, since the writer prints a `\n`
+        // there more often than the `]` of a content block.
+        assert_eq!(markup("-\titem"), "\\-\titem");
+        assert_eq!(markup("+\nitem"), "\\+\nitem");
+        assert_eq!(markup("/\tterm: description"), "\\/\tterm: description");
+        assert_eq!(markup("-"), "\\-");
     }
 
     #[test]

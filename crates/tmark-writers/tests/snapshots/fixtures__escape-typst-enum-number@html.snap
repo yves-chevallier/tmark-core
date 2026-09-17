@@ -2,8 +2,13 @@
 source: crates/tmark-writers/tests/fixtures.rs
 expression: snapshot
 ---
-\- \`\`\`h
-1\. i
+<ul>
+<li><input type="checkbox" disabled /> 0.</li>
+<li><input type="checkbox" disabled checked /> 1.</li>
+<li><input type="checkbox" disabled /> 3.5 kg</li>
+</ul>
+<p>The exam is at 10. o'clock.</p>
+<p>10. Not a list: a sentence that opens on a number.</p>
 
 ---requires---
 {

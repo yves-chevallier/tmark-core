@@ -1,0 +1,32 @@
+---
+source: crates/tmark-writers/tests/fixtures.rs
+expression: snapshot
+---
+\begin{tstasklist}
+\item[\tstodo] 0.
+\item[\tsdone] 1.
+\item[\tstodo] 3.5 kg
+\end{tstasklist}
+
+The exam is at 10. o'clock.
+
+10. Not a list: a sentence that opens on a number.
+
+---requires---
+{
+  "packages": [
+    "amssymb",
+    "enumitem",
+    "pifont"
+  ],
+  "fragments": [
+    "ts-todolist"
+  ],
+  "shell_escape": false,
+  "assets": [],
+  "bibliography": false,
+  "citations": [],
+  "acronyms": [],
+  "index": [],
+  "counters": []
+}

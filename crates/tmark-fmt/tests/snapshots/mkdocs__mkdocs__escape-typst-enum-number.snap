@@ -1,0 +1,11 @@
+---
+source: crates/tmark-fmt/tests/mkdocs.rs
+expression: mkdocs(&canonical)
+---
+- [ ] 0\.
+- [x] 1\.
+- [ ] 3.5 kg
+
+The exam is at 10. o'clock.
+
+10\. Not a list: a sentence that opens on a number.

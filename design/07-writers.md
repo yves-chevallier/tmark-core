@@ -576,10 +576,23 @@ and options, §2 the LaTeX catalogue, §4 Typst math), the contract names of
   content), not only a paragraph or a soft/hard break, so escaping
   position 0 unconditionally is a safe superset rather than an attempt at
   exact context tracking. `=` is escaped whenever leading, since a heading
-  marker is a run of one or more `=`; `+`, `-` and `/` only when followed
-  by a space, so a leading `-5` keeps Typst's own minus-sign substitution
-  and a leading `a--b` keeps its en-dash conversion. Verified against
-  typst 0.15.1 (fixture `escape-typst-structural`).
+  marker is a run of one or more `=`; `+`, `-` and `/` only when the next
+  character is whitespace or there is none, so a leading `-5` keeps
+  Typst's own minus-sign substitution and a leading `a--b` keeps its
+  en-dash conversion. Verified against typst 0.15.1 (fixture
+  `escape-typst-structural`).
+- A *number* at a line start is an enum marker too — digits, `.`,
+  whitespace — so the `.` is escaped there (`0\.`, `12\. foo`; the
+  backslash goes on the dot, `\1` being no Typst escape). Without it the
+  whole text of a `- [ ] 0.` task item became `enum.item(number: 0, body:
+  [])` and was rendered in the document's enum numbering instead
+  (challenge C72). Digits-dot-digits is a decimal number, not a marker
+  (`3.5 kg`), a `.` whose digits do not start the line is a full stop
+  (`at 10. o'clock`), and `)` after the digits is not a Typst marker at
+  all. The end of the text counts as a line end for every marker of this
+  family: what the writer prints after a `Str` is a newline more often
+  than the `]` of a content block. Verified against typst 0.14.2 (fixture
+  `escape-typst-enum-number`).
 - A Typst label (`typst/escape.rs::label`) keeps the characters Typst's
   lexer reads in one, XID_Continue plus `_ - : .`, so an accented or
   non-Latin id (`café-au-lait`, `日本語-見出し`) is a label as written;
