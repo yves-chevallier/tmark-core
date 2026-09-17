@@ -9,12 +9,12 @@ description = "TMark writers: IR to LaTeX, Typst and the Mkdocs web profile"
 
 [dependencies]
 # Writers read the IR...
-tmark-ir = { path = "../tmark-ir", version = "0.3.1" }
+tmark-ir = { path = "../tmark-ir", version = "0.3.2" }
 # ...and the resolution (numbers, labels, citations); never the file system.
-tmark-registry = { path = "../tmark-registry", version = "0.3.1", default-features = false }
+tmark-registry = { path = "../tmark-registry", version = "0.3.2", default-features = false }
 # The web lowering (`mkdocs.rs`) splices its replacements through `edit_many`
 # and prints untouched children in the `Mkdocs` profile (web-profile.md).
-tmark-fmt = { path = "../tmark-fmt", version = "0.3.1" }
+tmark-fmt = { path = "../tmark-fmt", version = "0.3.2" }
 # `Body`, `Requires` and `SourceMap` cross to Python and to `tmark write --map`
 # as JSON (design/07-writers.md, writers-and-passes.md §1).
 serde = { workspace = true }
@@ -27,6 +27,6 @@ unicode-ident = "1.0"
 
 [dev-dependencies]
 # Tests parse their inputs.
-tmark-syntax = { path = "../tmark-syntax", version = "0.3.1" }
+tmark-syntax = { path = "../tmark-syntax", version = "0.3.2" }
 # One snapshot per conformance fixture and per backend (design/10-testing.md §4).
 insta = { workspace = true }

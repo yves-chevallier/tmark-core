@@ -12,7 +12,7 @@ name = "tmark"
 path = "src/main.rs"
 
 [dependencies]
-tmark = { path = "../tmark", version = "0.3.1" }
+tmark = { path = "../tmark", version = "0.3.2" }
 # Command-line parsing; the edge crates may depend on it (design/01-architecture.md).
 clap = { workspace = true }
 # `tmark parse` and `tmark schema` print JSON.

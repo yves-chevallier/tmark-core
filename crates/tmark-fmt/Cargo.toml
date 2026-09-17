@@ -9,11 +9,11 @@ description = "TMark canonical printer: IR back to TeXSmith Markdown text"
 
 [dependencies]
 # The IR is what the printer prints.
-tmark-ir = { path = "../tmark-ir", version = "0.3.1" }
+tmark-ir = { path = "../tmark-ir", version = "0.3.2" }
 
 [dev-dependencies]
 # Round-trip tests: parse(print(doc)) == doc.
-tmark-syntax = { path = "../tmark-syntax", version = "0.3.1" }
+tmark-syntax = { path = "../tmark-syntax", version = "0.3.2" }
 # Scratch example and JSON dumps in tests.
 serde_json = { workspace = true }
 # Property tests: edit_many splices are the identity on canonical text.

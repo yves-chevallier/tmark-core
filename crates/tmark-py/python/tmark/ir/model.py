@@ -1,5 +1,5 @@
 """The tmark IR as Python dataclasses, generated from the IR schema. Do not edit.
-tmark version: 0.3.0
+tmark version: 0.3.2
 schema sha256: 85372b17b17ef62bbc6ea1f86db2989a3b7a65ce80166a3e662400199316536d
 
 Regenerate with ``crates/tmark-py/scripts/gen_ir_models.py`` (``--check`` in CI).
@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Final, Literal, NamedTuple, TypeAlias
 
-TMARK_VERSION: Final = '0.3.0'
+TMARK_VERSION: Final = '0.3.2'
 SCHEMA_HASH: Final = '85372b17b17ef62bbc6ea1f86db2989a3b7a65ce80166a3e662400199316536d'
 
 #: A JSON value the schema leaves untyped (front-matter blobs).
