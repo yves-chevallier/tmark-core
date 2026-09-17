@@ -3,7 +3,7 @@ source: crates/tmark-writers/tests/fixtures.rs
 expression: snapshot
 ---
 #table(
-  columns: 5,
+  columns: (1fr, 1fr, 1fr, 1fr, 1fr,),
   align: (left, left, left, left, left,),
   table.header(table.cell(rowspan: 2)[Product], table.cell(colspan: 2, align: center)[FY23], table.cell(colspan: 2, align: center)[FY24], [Q1], [Q2], [Q1], [Q2]),
   [Apples], [1], [2], [3], [4],

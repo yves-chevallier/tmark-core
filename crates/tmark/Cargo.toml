@@ -15,12 +15,12 @@ fs = ["tmark-registry/fs"]
 # The facade re-exports one entry point per crate (design/01-architecture.md
 # §The facade): IR and schemas, parser, registries (fs behind the feature),
 # printer, lint rules, writers (milestone 4).
-tmark-ir = { path = "../tmark-ir", version = "0.3.0" }
-tmark-syntax = { path = "../tmark-syntax", version = "0.3.0" }
-tmark-registry = { path = "../tmark-registry", version = "0.3.0", default-features = false }
-tmark-fmt = { path = "../tmark-fmt", version = "0.3.0" }
-tmark-lint = { path = "../tmark-lint", version = "0.3.0" }
-tmark-writers = { path = "../tmark-writers", version = "0.3.0" }
+tmark-ir = { path = "../tmark-ir", version = "0.3.1" }
+tmark-syntax = { path = "../tmark-syntax", version = "0.3.1" }
+tmark-registry = { path = "../tmark-registry", version = "0.3.1", default-features = false }
+tmark-fmt = { path = "../tmark-fmt", version = "0.3.1" }
+tmark-lint = { path = "../tmark-lint", version = "0.3.1" }
+tmark-writers = { path = "../tmark-writers", version = "0.3.1" }
 # `tmark.toml` parsing (design/08-lsp.md §Workspace); no I/O here, the
 # edges hand over the text (`Config::discover` is behind `fs`, like FsLoader).
 toml = { workspace = true }

@@ -3,7 +3,7 @@ source: crates/tmark-writers/tests/fixtures.rs
 expression: snapshot
 ---
 #table(
-  columns: 3,
+  columns: (1fr, 1fr, 1fr,),
   align: (left, left, left,),
   table.header([Key `tlmgr` name], [*Bold head*], [#link("https://e.org")[Link]]),
   [`body code`], [_em_], [plain],

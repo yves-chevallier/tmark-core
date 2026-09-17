@@ -4,7 +4,7 @@ expression: snapshot
 ---
 #figure(
   table(
-    columns: 2,
+    columns: (1fr, 1fr,),
     align: (left, left,),
     table.header([A], [B]),
     [1], [2],

@@ -4,7 +4,7 @@ expression: snapshot
 ---
 #figure(
   table(
-    columns: 3,
+    columns: (1fr, 1fr, 1fr,),
     align: (left, left, left,),
     table.header(table.cell(rowspan: 2)[Fruit], table.cell(colspan: 2, align: center)[Warehouses], [Geneva], [Zurich]),
     [Apples], [3], [4],

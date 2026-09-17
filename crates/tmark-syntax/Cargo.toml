@@ -8,8 +8,8 @@ rust-version.workspace = true
 description = "TMark parser: TeXSmith Markdown source to IR"
 
 [dependencies]
-tmark-ir = { path = "../tmark-ir", version = "0.3.0" }
-tmark-markdown = { path = "../tmark-markdown", version = "0.3.0" }
+tmark-ir = { path = "../tmark-ir", version = "0.3.1" }
+tmark-markdown = { path = "../tmark-markdown", version = "0.3.1" }
 # `yaml table` and `yaml table-config` fences (same YAML crate as the front matter).
 serde = { workspace = true }
 serde_json = { workspace = true }

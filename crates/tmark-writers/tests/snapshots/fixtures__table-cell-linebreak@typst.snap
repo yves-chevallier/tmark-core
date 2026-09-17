@@ -3,7 +3,7 @@ source: crates/tmark-writers/tests/fixtures.rs
 expression: snapshot
 ---
 #table(
-  columns: 2,
+  columns: (1fr, 1fr,),
   align: (left, left,),
   table.header([A], [B]),
   [a b], [c],

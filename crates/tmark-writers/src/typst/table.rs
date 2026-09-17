@@ -17,8 +17,8 @@ fn align_name(align: Align) -> &'static str {
     }
 }
 
-/// `X` → `1fr`, `NN%` as is, else `auto`; the bare count when every
-/// column is auto.
+/// `X` → `1fr`, `NN%` as is, else `auto`; every column stretched when none
+/// of them declares a width.
 fn columns_spec(model: &TableModel) -> String {
     let leaves: Vec<_> = model.columns.iter().flat_map(Column::leaves).collect();
     let widths: Vec<String> = leaves
@@ -31,7 +31,12 @@ fn columns_spec(model: &TableModel) -> String {
         })
         .collect();
     if widths.iter().all(|w| w == "auto") {
-        leaves.len().to_string()
+        // No column declares a width. The LaTeX writer hands that table to
+        // `tabularx` with every column an `X`, so it fills the line; leaving
+        // Typst on `auto` here would set the same table at its content width
+        // instead, narrower and ragged against the text around it.
+        let stretched = vec!["1fr"; leaves.len()];
+        format!("({},)", stretched.join(", "))
     } else {
         format!("({},)", widths.join(", "))
     }

@@ -10,7 +10,7 @@ upon heating],
 
 #figure(
   table(
-    columns: 2,
+    columns: (1fr, 1fr,),
     align: (left, left,),
     table.header([Cheese], [Age]),
     [Comté], [18],
