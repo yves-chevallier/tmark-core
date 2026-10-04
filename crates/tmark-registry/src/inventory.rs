@@ -36,12 +36,28 @@ pub struct InventoryEntry {
 }
 
 /// A published inventory. Design 06 §Inventory format.
+///
+/// `refs` is required: serde ignores unknown keys, so a defaulted map would
+/// read an inventory whose entries sit under another name (TeXSmith's schema
+/// 1 wrote `anchors`) as an empty one, and every citation through it would go
+/// unresolved with no word on why.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Inventory {
     #[serde(default)]
     pub document: InventoryDocument,
-    #[serde(default)]
     pub refs: BTreeMap<String, InventoryEntry>,
+}
+
+impl Inventory {
+    /// What a citing document prints for `entry`: the label prefixed with the
+    /// target's `document.id` (`RHE-423` + `FW-10` → `RHE-423-FW-10`), which
+    /// is what keeps it unambiguous outside the document that defines it.
+    pub fn qualified_label(&self, entry: &InventoryEntry) -> String {
+        match self.document.id.as_deref().map(str::trim) {
+            Some(id) if !id.is_empty() => format!("{id}-{}", entry.label),
+            _ => entry.label.clone(),
+        }
+    }
 }
 
 /// Inventories by alias, as declared in `sources.crossrefs`.

@@ -109,6 +109,13 @@ here for cross-document references:
 generated from the same `schemars` schema. A stale `hash` raises
 `crossref-inventory-stale`.
 
+`refs` is required: an inventory without it is `crossref-inventory-missing`
+("not valid: missing field `refs`") rather than an empty inventory, since
+serde ignores unknown keys and a map published under another name would
+otherwise unresolve every citation silently. `External.label` is the label a
+citing document prints: `document.id` joined to the entry's label with a
+hyphen (`RHE-423-FW-10`), or the bare label when the target has no `id`.
+
 ## Site-wide resolution
 
 The web profile (TeXSmith `specs/migration/web-profile.md`) renders a book

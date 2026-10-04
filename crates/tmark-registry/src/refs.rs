@@ -39,6 +39,10 @@ pub enum Resolution {
     },
     External {
         alias: String,
+        /// The label as the citing document prints it: the target's
+        /// `document.id` joined to the entry's label (`RHE-423-FW-10`), or the
+        /// bare label when the target declares no id (spec §Cross-document
+        /// references).
         label: String,
         page: Option<u32>,
     },
@@ -255,7 +259,7 @@ fn resolve_one(key: &str, span: Span, resolved: &mut Resolved) -> Resolution {
             return match inventory.refs.get(rest) {
                 Some(entry) => Resolution::External {
                     alias: alias.to_string(),
-                    label: entry.label.clone(),
+                    label: inventory.qualified_label(entry),
                     page: entry.page,
                 },
                 None => Resolution::Unresolved,

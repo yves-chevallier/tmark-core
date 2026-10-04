@@ -150,7 +150,7 @@ fn includes_and_inventories_load_through_the_loader() {
         "labels of includes count"
     );
     assert!(
-        matches!(&r.refs[1].resolution, Resolution::External { label, page: Some(14), .. } if label == "FW-10")
+        matches!(&r.refs[1].resolution, Resolution::External { label, page: Some(14), .. } if label == "RHE-FW-10")
     );
     assert_eq!(r.refs[2].resolution, Resolution::Unresolved);
     assert!(r.diagnostics.iter().all(|d| d.code != Code::LabelDuplicate));
@@ -230,4 +230,41 @@ fn apply(text: &str, diagnostics: &[tmark_ir::Diagnostic]) -> String {
         );
     }
     out
+}
+
+#[test]
+fn an_external_label_is_bare_when_the_target_declares_no_id() {
+    let main =
+        "---\npress:\n  sources:\n    crossrefs: {fwrev: fw.refs.json}\n---\n\nSee @fwrev:fw:x.\n";
+    let loader = MemoryLoader::new().with(
+        "fw.refs.json",
+        r#"{"document": {"title": "Firmware"}, "refs": {"fw:x": {"label": "FW-10"}}}"#,
+    );
+    let doc = parse(main, FileId::default()).document;
+    let r = resolve(&doc, &loader, &ResolveOptions::default());
+    assert!(
+        matches!(&r.refs[0].resolution, Resolution::External { label, page: None, .. } if label == "FW-10")
+    );
+}
+
+#[test]
+fn an_inventory_without_refs_is_reported_not_read_as_empty() {
+    // TeXSmith's schema 1 named the map `anchors`: it must not load as an
+    // inventory that simply publishes nothing.
+    let main =
+        "---\npress:\n  sources:\n    crossrefs: {fwrev: fw.refs.json}\n---\n\nSee @fwrev:fw:x.\n";
+    let loader = MemoryLoader::new().with(
+        "fw.refs.json",
+        r#"{"schema": 1, "document": {"id": "RHE"}, "anchors": {"fw:x": {"label": "FW-10"}}}"#,
+    );
+    let doc = parse(main, FileId::default()).document;
+    let r = resolve(&doc, &loader, &ResolveOptions::default());
+    assert_eq!(
+        codes(&r.diagnostics),
+        vec!["crossref-inventory-missing", "ref-unresolved"]
+    );
+    assert!(r
+        .diagnostics
+        .iter()
+        .any(|d| d.message.contains("missing field `refs`")));
 }
