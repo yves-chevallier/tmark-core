@@ -25,6 +25,7 @@ See #link(<claim>)[claim], #link(<top>)[top], #link(<d1>)[d1], #link(<fig:u>)[fi
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

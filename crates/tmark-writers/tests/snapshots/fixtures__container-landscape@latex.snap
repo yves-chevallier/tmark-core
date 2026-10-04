@@ -2,19 +2,34 @@
 source: crates/tmark-writers/tests/fixtures.rs
 expression: snapshot
 ---
-#ts-div("gadget", x: 1)[
-Body.
-]
+\begin{tsdiv}{landscape}
+\begin{table}[H]
+\centering
+\caption{A wide table.}
+\label{tbl:wide}
+\vspace{0.5em}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Key} & \textbf{Value} \\
+\midrule
+a & 1 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\end{tsdiv}
 
 ---requires---
 {
   "packages": [
+    "booktabs",
     "epigraph",
+    "float",
     "graphicx",
     "marginnote",
     "multicol",
     "pdflscape",
     "progressbar",
+    "tabularx",
     "xcolor"
   ],
   "fragments": [

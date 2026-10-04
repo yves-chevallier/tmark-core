@@ -14,6 +14,7 @@ expression: snapshot
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

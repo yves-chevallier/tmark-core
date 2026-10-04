@@ -2,8 +2,16 @@
 source: crates/tmark-writers/tests/fixtures.rs
 expression: snapshot
 ---
-#ts-div("gadget", x: 1)[
-Body.
+#ts-div("landscape")[
+#figure(
+  table(
+    columns: (1fr, 1fr,),
+    align: (left, left,),
+    table.header([Key], [Value]),
+    [a], [1],
+  ),
+  caption: [A wide table.],
+) <tbl:wide>
 ]
 
 ---requires---

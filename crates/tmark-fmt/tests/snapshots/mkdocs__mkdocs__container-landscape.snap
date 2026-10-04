@@ -1,0 +1,11 @@
+---
+source: crates/tmark-fmt/tests/mkdocs.rs
+expression: mkdocs(&canonical)
+---
+::: landscape
+Table: A wide table. {#tbl:wide}
+
+| Key | Value |
+| --- | ----- |
+| a   | 1     |
+:::

@@ -388,7 +388,7 @@ and options, §2 the LaTeX catalogue, §4 Typst math), the contract names of
 | `Include`, `\tsdivider` (top level) / `\tsrule` (in a container) | done | done | done (`<hr>` / `<hr class="rule">`) |
 | Scripts, emoji (`\tsscript`, `\tsemoji`) | done, untested on a corpus | done | plain spans |
 | Progress bars (`\tsprogress[thin]{0.45}{label}`) | done | done (`#ts-progress`) | done (`<progress>` in a `.progress` span) |
-| `multicolumn`/`div` containers | via `tsdiv` | via `#ts-div` | `<div class="multicolumn">`, `<div class="…">` |
+| `multicolumn`/`landscape`/`div` containers | via `tsdiv` | via `#ts-div` | `<div class="multicolumn">`, `<div class="landscape">`, `<div class="…">` |
 | Tabs (`tsdiv{tab}[title=…]` in sequence) | done | done | done (`tabbed-set` / `tabbed-labels` / `tabbed-block`) |
 | TeX logos (`typography.tex-logos`) | done (`\LaTeX{}`, `\tslogo{…}`) | done (`#ts-logo`) | done (`<span class="tex-logo">`) |
 | `.unnumbered` / `.unlisted` headings | done (`\section*`, `\addcontentsline` kept for unnumbered only) | done (`numbering: none`, `outlined: false`) | classes |

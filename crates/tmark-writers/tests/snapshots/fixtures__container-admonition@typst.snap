@@ -13,6 +13,7 @@ Install #ts-logo("TeX") Live before `texsmith --build`.
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "tcolorbox",
     "xcolor"

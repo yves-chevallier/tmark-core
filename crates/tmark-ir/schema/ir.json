@@ -872,7 +872,7 @@
           }
         },
         {
-          "description": "Any other `::: name` container. Spec §Div: the names of the closed registry (`registry::CONTAINERS`: `tabs`, `tab`, `multicolumn`, `div`) and, with a `container-unknown` diagnostic, any other name, kept so the printer round-trips it.",
+          "description": "Any other `::: name` container. Spec §Div: the names of the closed registry (`registry::CONTAINERS`: `tabs`, `tab`, `multicolumn`, `landscape`, `div`) and, with a `container-unknown` diagnostic, any other name, kept so the printer round-trips it.",
           "type": "object",
           "required": [
             "name",

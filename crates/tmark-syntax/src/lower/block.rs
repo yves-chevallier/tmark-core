@@ -862,7 +862,7 @@ impl Lowerer {
                 })
             }
             // The layout containers of the closed registry (spec §Div):
-            // `tabs`, `tab`, `multicolumn`, `div`.
+            // `tabs`, `tab`, `multicolumn`, `landscape`, `div`.
             layout if registry::container(layout).is_some() => {
                 if layout == "tab" && !self.in_tabs {
                     self.diag(

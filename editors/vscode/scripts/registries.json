@@ -137,6 +137,7 @@
     "tabs",
     "tab",
     "multicolumn",
+    "landscape",
     "div"
   ],
   "fragments": [
@@ -159,6 +160,7 @@
         "epigraph",
         "marginnote",
         "multicol",
+        "pdflscape",
         "progressbar",
         "graphicx"
       ],

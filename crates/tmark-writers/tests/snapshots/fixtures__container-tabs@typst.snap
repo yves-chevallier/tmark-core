@@ -17,6 +17,7 @@ Linux is an open-source operating system.
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

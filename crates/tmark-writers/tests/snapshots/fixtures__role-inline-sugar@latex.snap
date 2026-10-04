@@ -11,6 +11,7 @@ Some \tsmark{marked}, \sout{deleted}, H\textsubscript{2}O, E=mc\textsuperscript{
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "tikz",
     "ulem",

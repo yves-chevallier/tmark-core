@@ -1823,11 +1823,21 @@ no node of its own: `aside` (§@[sec:notes]) and `figure` (§@[sec:floats])
 have theirs, admonition types are `Admonition`, and the rest is a `Div`.
 The container names TMark knows form a closed registry (P4, P6): the
 admonition types, built-in and declared; `aside`, `figure`, `tabs`, `tab`;
-and two *layout* containers whose whole meaning is their name:
+and three *layout* containers whose whole meaning is their name:
 
 `::: multicolumn {cols=2}`
 :   The content flows in `cols` columns (default 2): `multicol`,
     `#columns`, CSS columns.
+
+`::: landscape`
+:   The content is set on pages of its own, turned to landscape: the
+    wide table a portrait measure cannot hold is the case it exists for,
+    and a long table inside it turns every page it runs over. `pdflscape`'s
+    `landscape` (the PDF viewer shows the pages rotated), `#page(flipped:
+    true)`; the web has no pages and renders it transparently. Paged media
+    start a page where it opens and where it closes, so it belongs at the
+    top level of the document: a writer does not refuse it in a container,
+    but a backend may.
 
 `::: div {.grid .cards}`
 :   A container that means nothing: a hook for classes and an id, rendered

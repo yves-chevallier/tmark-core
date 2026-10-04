@@ -31,6 +31,7 @@ expression: snapshot
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "tabularx",
     "xcolor"

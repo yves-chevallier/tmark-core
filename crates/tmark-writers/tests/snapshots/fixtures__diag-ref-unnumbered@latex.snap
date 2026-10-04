@@ -33,6 +33,7 @@ See \hyperref[claim]{claim}, \hyperref[top]{top}, \hyperref[d1]{d1}, \hyperref[f
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "subcaption",
     "xcolor"

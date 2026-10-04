@@ -24,6 +24,7 @@ After the rule.
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

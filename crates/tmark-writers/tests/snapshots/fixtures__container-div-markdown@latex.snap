@@ -13,6 +13,7 @@ Some \textbf{bold} inside.
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

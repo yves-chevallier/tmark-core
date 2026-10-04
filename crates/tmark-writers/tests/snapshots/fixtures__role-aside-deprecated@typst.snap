@@ -11,6 +11,7 @@ Hooke's law#ts-aside(side: "left")[linear only] holds.
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

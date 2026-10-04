@@ -1,0 +1,16 @@
+---
+source: crates/tmark-writers/tests/web.rs
+expression: snapshot
+---
+::: landscape
+<figure markdown="1" class="ts-table" id="tbl:wide">
+<figcaption markdown="span"><span class="ts-caption-label">Table 1:</span> A wide table.</figcaption>
+
+| Key | Value |
+| --- | ----- |
+| a   | 1     |
+
+</figure>
+
+
+:::

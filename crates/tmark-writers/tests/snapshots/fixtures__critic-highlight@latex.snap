@@ -11,6 +11,7 @@ Keep \tsmark{this sentence} for the summary.
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

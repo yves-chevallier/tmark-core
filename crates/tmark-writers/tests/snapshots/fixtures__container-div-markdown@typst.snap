@@ -13,6 +13,7 @@ Some *bold* inside.
     "graphicx",
     "marginnote",
     "multicol",
+    "pdflscape",
     "progressbar",
     "xcolor"
   ],

@@ -914,7 +914,7 @@ pub struct Admonition {
 }
 
 /// Any other `::: name` container. Spec §Div: the names of the closed
-/// registry (`registry::CONTAINERS`: `tabs`, `tab`, `multicolumn`, `div`)
+/// registry (`registry::CONTAINERS`: `tabs`, `tab`, `multicolumn`, `landscape`, `div`)
 /// and, with a `container-unknown` diagnostic, any other name, kept so the
 /// printer round-trips it.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]

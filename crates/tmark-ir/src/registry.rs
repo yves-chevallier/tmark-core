@@ -401,7 +401,7 @@ const fn container_row(
 }
 
 /// Spec §Div: "The container names TMark knows form a closed registry".
-/// A layout container (`multicolumn`, `div`, `tabs`, `tab`) renders through
+/// A layout container (`multicolumn`, `landscape`, `div`, `tabs`, `tab`) renders through
 /// the `tsdiv` / `#ts-div` / `<div class="name">` contract with its
 /// attributes forwarded.
 pub const CONTAINERS: &[Container] = &[
@@ -410,6 +410,7 @@ pub const CONTAINERS: &[Container] = &[
     container_row("tabs", "Div", &[], "Tabs"),
     container_row("tab", "Div", &["title"], "Tabs"),
     container_row("multicolumn", "Div", &["cols"], "Div"),
+    container_row("landscape", "Div", &[], "Div"),
     container_row("div", "Div", &[], "Div"),
 ];
 
@@ -898,6 +899,7 @@ pub const FRAGMENTS: &[Fragment] = &[
             "epigraph",
             "marginnote",
             "multicol",
+            "pdflscape",
             "progressbar",
             "graphicx",
         ],
@@ -1142,6 +1144,7 @@ mod tests {
     #[test]
     fn containers_and_logos() {
         assert_eq!(container("multicolumn").unwrap().node, "Div");
+        assert_eq!(container("landscape").unwrap().node, "Div");
         assert_eq!(container("tab").unwrap().keys, &["title"]);
         assert!(
             container("note").is_none(),
