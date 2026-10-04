@@ -1,6 +1,6 @@
 """The tmark IR as Python dataclasses, generated from the IR schema. Do not edit.
-tmark version: 0.3.2
-schema sha256: 85372b17b17ef62bbc6ea1f86db2989a3b7a65ce80166a3e662400199316536d
+tmark version: 0.3.3
+schema sha256: 2cbc519c53bcdc48860a640b0e27b4c69d90027343725af85f41dac6e2304e7e
 
 Regenerate with ``crates/tmark-py/scripts/gen_ir_models.py`` (``--check`` in CI).
 Every node is a
@@ -14,8 +14,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Final, Literal, NamedTuple, TypeAlias
 
-TMARK_VERSION: Final = '0.3.2'
-SCHEMA_HASH: Final = '85372b17b17ef62bbc6ea1f86db2989a3b7a65ce80166a3e662400199316536d'
+TMARK_VERSION: Final = '0.3.3'
+SCHEMA_HASH: Final = '2cbc519c53bcdc48860a640b0e27b4c69d90027343725af85f41dac6e2304e7e'
 
 #: A JSON value the schema leaves untyped (front-matter blobs).
 JsonValue: TypeAlias = Any
@@ -737,7 +737,7 @@ class Declare(Record):
 
 @dataclass(frozen=True, slots=True)
 class Div(Block):
-    """Any other `::: name` container. Spec §Div: the names of the closed registry (`registry::CONTAINERS`: `tabs`, `tab`, `multicolumn`, `div`) and, with a `container-unknown` diagnostic, any other name, kept so the printer round-trips it."""
+    """Any other `::: name` container. Spec §Div: the names of the closed registry (`registry::CONTAINERS`: `tabs`, `tab`, `multicolumn`, `landscape`, `div`) and, with a `container-unknown` diagnostic, any other name, kept so the printer round-trips it."""
 
     type: ClassVar[Literal["Div"]] = "Div"
     name: str
